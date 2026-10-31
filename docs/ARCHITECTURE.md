@@ -288,7 +288,7 @@ PAD_BUCKET           = 256
                                                      │ XChaCha20-Poly1305
                                                      ▼
  wrapped_vmk_i = Seal( key = KEK_i, nonce = wrap_nonce_i (24 B random),
-                       aad = vault_id (16) || slot_id_i (16) || u16(FORMAT_VERSION),
+                       aad = vault_id (16) || slot_id_i (16) || u16(format_version),
                        pt  = VMK )                                → 48 B (32 ct + 16 tag)
 
  VMK (32 B, OS CSPRNG; lives only in locked memory while unlocked)
@@ -309,9 +309,12 @@ nonce       = 24 B random, fresh on every write
 plaintext   = u32(len(payload)) || payload || 0x00 × p,
               where total = 256 × ceil((4 + len(payload)) / 256), so the minimum size is 256
 ciphertext  = Seal( key = data_key, nonce,
-                    aad = vault_id (16) || record_id (16) || u16(SCHEMA_VERSION),
+                    aad = vault_id (16) || record_id (16) || u16(schema_version),
                     pt  = plaintext )
 ```
+`vault_id`, `format_version` and `schema_version` in every AAD are the values
+from the vault header. When writing, they are always this build's
+`FORMAT_VERSION` and `SCHEMA_VERSION`.
 On decryption efre checks, in order: the AEAD tag; `4 + len ≤ total`; every
 padding byte is zero; and `payload` decodes as schema v1. Any failure means the
 record is refused (fail closed). The maximum payload is 1 MiB.
@@ -623,6 +626,15 @@ See §3.3 for what it doesn't block.
 - **Installer:** NSIS with `installMode: currentUser`, so no admin.
   `webviewInstallMode: skip`, because WebView2 ships with Windows 11 and the
   bootstrapper would download. The installer is unsigned for now.
+  - Tauri's per-user NSIS installer defaults to `%LOCALAPPDATA%\<productName>`,
+    which is the vault folder. The vault is never at risk, as checked against
+    the tauri-bundler 2.10 template: its uninstaller deletes only its own files,
+    removes the folder only if it is empty (`RMDir` without `/r`), and its
+    "delete app data" option removes `%LOCALAPPDATA%\<bundle id>`, not
+    `%LOCALAPPDATA%\efre`.
+  - Phase 5 moves the default install directory to
+    `%LOCALAPPDATA%\Programs\efre` (NSIS hook or template), so binaries and the
+    vault don't share a folder.
 
 ## 10. Network isolation
 - **Rust:** no HTTP/TLS/WebSocket client crates. `deny.toml` bans
