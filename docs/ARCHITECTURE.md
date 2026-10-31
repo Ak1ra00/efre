@@ -3,8 +3,9 @@
 Status: **Phase 3.**
 - `efre-core` and the mock implement §5–§7.
 - `efre-authn` now has the Windows WebAuthn driver (§4), attestation
-  verification and the YubiKey presence watcher. It is CI-verified on Windows
-  but not yet tested on real hardware (`docs/HARDWARE_TESTS.md`).
+  verification and the YubiKey presence watcher. It is CI-verified on Windows,
+  and it passed the hardware check on the owner's PC: WebAuthn API 9, two
+  YubiKeys, 20 passed and 0 failed (`docs/HARDWARE_TESTS.md` §6).
 - The app (§8–§10) is phase 4.
 - Decisions D1–D5 were accepted with their defaults (§14).
 
@@ -150,6 +151,12 @@ that only API ≥ 6 creates the credential correctly, efre will in practice need
 a current Windows 11, and Windows 10 won't work. The exact minimum gets
 confirmed on your PC in phase 3, and the "update Windows" screen will name it.
 
+**Hardware result (2026-10-31, WebAuthn API 9):** with `bEnablePrf` and the
+hmac-secret extension, Windows created non-discoverable credentials. Their
+signed authenticator data carries `hmac-secret: true` and `credProtect: 3`, so
+D1 holds on API 9. Windows accepted the RP ID `efre:`, and both keys' packed
+attestations verified against the pinned anchors. API 4–5 remain unverified.
+
 ### 4.5 MakeCredential (enrollment)
 `WEBAUTHN_AUTHENTICATOR_MAKE_CREDENTIAL_OPTIONS`, with `dwVersion` set to the
 highest version ≤ 7 that the runtime supports:
@@ -247,6 +254,10 @@ Response checks:
 - The returned `Credential.pbId` must equal one of the allowed ids. efre looks
   up that slot.
 - authData: `rpIdHash == SHA-256("efre:")`, UP and UV set.
+- At assertion, the authData's `hmac-secret` extension is the **encrypted**
+  output: a byte string of 32, 48, 64 or 80 bytes, not the bool it is at
+  registration. efre checks only its shape and uses Windows' decrypted
+  `pHmacSecret`. This was found on the first hardware run.
 - `pHmacSecret` is present, and `cbFirst == 32`. Otherwise the outcome is
   "this key did not return a secret".
 - efre copies `pbFirst` into a `Zeroizing<[u8; 32]>`, **overwrites Windows'
@@ -258,16 +269,25 @@ add nothing. The credential public key is therefore not stored.
 
 ### 4.7 Outcome mapping
 HRESULT → `AuthnError` → UI copy. Wrong PINs are retried *inside* the Windows
-dialog, so efre only sees the final result. Phase 3 confirms each code on
-hardware.
+dialog, so efre only sees the final result.
+
+Confirmed on hardware (API 9):
+- `Cancelled`.
+- `AlreadyEnrolled`.
+- A wrong PIN is retried inside the dialog.
+- An **unknown key** is handled inside Windows' own dialog ("This security key
+  doesn't look familiar"). Dismissing it reports `Cancelled`, so the
+  cancelled message must also cover "this key isn't enrolled".
+
+Not yet observed: `NoDevice`, `Timeout`, `PinBlocked`, `PinNotSet`.
 
 | HRESULT (DOM name) | efre outcome | UI |
 |---|---|---|
-| `NTE_USER_CANCELLED`, `HRESULT_FROM_WIN32(ERROR_CANCELLED)` (NotAllowed) | `Cancelled` | "Cancelled. Insert your YubiKey and try again." |
+| `NTE_USER_CANCELLED`, `HRESULT_FROM_WIN32(ERROR_CANCELLED)` (NotAllowed) | `Cancelled` (confirmed) | "Cancelled. If Windows said it didn't recognise the key, that key isn't enrolled in this vault: try your other key." |
 | `HRESULT_FROM_WIN32(ERROR_TIMEOUT)` (NotAllowed) | `Timeout` | "Timed out waiting for your YubiKey." |
 | `NTE_DEVICE_NOT_FOUND` (NotAllowed) | `NoDevice` | "No YubiKey found. Plug it into a USB port." |
-| `NTE_NOT_FOUND` (NotAllowed) | `UnknownKey` | "This YubiKey isn't enrolled in this vault. Try your other key." |
-| `NTE_EXISTS` (InvalidState), enrollment only | `AlreadyEnrolled` | "This YubiKey is already enrolled. Insert a different one." |
+| `NTE_NOT_FOUND` (NotAllowed) | `UnknownKey` (not seen on API 9; Windows handles it in its dialog) | "This YubiKey isn't enrolled in this vault. Try your other key." |
+| `NTE_EXISTS` (InvalidState), enrollment only | `AlreadyEnrolled` (confirmed) | "This YubiKey is already enrolled. Insert a different one." |
 | `NTE_NOT_SUPPORTED`, `ERROR_NOT_SUPPORTED` (Constraint) | `NotSupported` (no PIN set, or UV/credProtect unsupported) | PIN setup guide |
 | PIN blocked, as observed in phase 3 | `PinBlocked` | "This key's PIN is blocked. Use your backup key, then remove this one in Settings." |
 | API < 4, or authData missing hmac-secret | `UnsupportedPlatform` | "Update Windows" screen |

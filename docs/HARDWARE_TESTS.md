@@ -63,7 +63,7 @@ mouse (or Ctrl+A in Windows Terminal), copy it, and send it back.
 | 4 | Press Cancel; then a wrong PIN once, then the right PIN | Cancel is refused (`Cancelled`). The wrong PIN is handled inside the Windows dialog, and the right PIN unlocks. |
 | 5 | Key 1 | Key 2 is renamed (1 prompt). |
 | 6 | Key 1 | Key 2 is removed and the vault key rotated (1 prompt). |
-| 7 | Key 2, then key 1 | Key 2 is refused (`UnknownKey`, or a NOTE with the real error). Key 1 still unlocks. |
+| 7 | Key 2, then key 1 | Windows says it doesn't recognise key 2; press Cancel (PASS as `Cancelled`). Key 1 still unlocks. |
 | 8 | Unplug all keys, replug one | At least 2 events: "no YubiKey left", then "present again". |
 | 9 | — | The temp folder is deleted. Summary shows 0 failed. |
 
@@ -98,3 +98,29 @@ Paste the tool's full output, plus:
 | Timeout: leave the dialog open ~2 min (optional) → outcome | |
 | Key with no PIN set (spare key only, optional) → what Windows offered | |
 | PIN blocked (**spare key only**, optional) → outcome | |
+
+## 6. Results log
+
+### 2026-10-31: first full run (Windows WebAuthn API 9, two YubiKeys)
+**20 passed, 1 note, 0 failed.** Both keys report AAGUID
+`0f083f18-4105-43a8-ad69-24e812e38141`, so they are the same model.
+
+| Item | Observed |
+|---|---|
+| Enrollment (both keys) | Attestation verified against the pinned anchors; `hmac-secret: true` and `credProtect: 3` on a non-discoverable credential (D1 holds) |
+| Re-enrolling key 1 | `AlreadyEnrolled` (`NTE_EXISTS`) |
+| Unlock with each key | OK; the test item decrypts intact |
+| Cancel | `Cancelled` |
+| Wrong PIN, then right PIN | Retried inside the Windows dialog, then unlocked |
+| Rename key 2 | One prompt (an enrolled key) |
+| Remove key 2 + rotation | One prompt (key 1, two salts in one touch); key 1 still unlocks and the item is intact |
+| Removed key | Windows: "doesn't look familiar"; dismissing it reports `Cancelled` (now accepted by the tool) |
+| Presence watcher | An event on every unplug and replug |
+
+An earlier attempt the same day stopped at key 1's confirmation. The parser
+refused the encrypted hmac-secret output in the assertion's authenticator data.
+That was fixed in `da7931b`.
+
+Still open (optional): Windows version (`winver`), key model and firmware, an
+unlock with no key plugged in, a timeout, a key with no PIN (spare key), PIN
+blocked (**spare key only**), and the by-eye checks in §4.

@@ -59,11 +59,11 @@ mod flow {
             &mut self,
             what: &str,
             result: Result<T, VaultError>,
-            expected: &AuthnError,
+            expected: &[AuthnError],
         ) {
             match result {
                 Ok(_) => self.fail(what, "it SUCCEEDED but must be refused"),
-                Err(VaultError::Authn(e)) if &e == expected => {
+                Err(VaultError::Authn(e)) if expected.contains(&e) => {
                     self.pass(&format!("{what} -> {e:?}"))
                 }
                 Err(e) => {
@@ -261,7 +261,7 @@ mod flow {
                     "    -> Windows prompt for KEY 1: PIN, then touch. Windows should then say this key is already registered; close that message."
                 );
             }),
-            &AuthnError::AlreadyEnrolled,
+            &[AuthnError::AlreadyEnrolled],
         );
         pause("Unplug KEY 1. Plug in KEY 2 only.");
         let Some(k2) = t.check(
@@ -302,7 +302,7 @@ mod flow {
         t.expect_refused(
             "cancelled unlock",
             vault.unlock(authn),
-            &AuthnError::Cancelled,
+            &[AuthnError::Cancelled],
         );
         pause(
             "Keep KEY 1 plugged in. In the next prompt, enter a WRONG PIN once (Windows shows the error), then the CORRECT PIN and touch KEY 1.",
@@ -348,12 +348,12 @@ mod flow {
 
         println!("\n[7] The removed key must now be refused.");
         pause(
-            "Unplug KEY 1. Plug in KEY 2 only. If Windows says the key isn't recognised, press Cancel.",
+            "Unplug KEY 1. Plug in KEY 2 only. Windows should say it doesn't recognise the key: press Cancel.",
         );
         t.expect_refused(
             "removed key 2",
             vault.unlock(authn),
-            &AuthnError::UnknownKey,
+            &[AuthnError::UnknownKey, AuthnError::Cancelled],
         );
         pause("Unplug KEY 2. Plug in KEY 1 only. One Windows prompt: PIN, then touch KEY 1.");
         if t.check("key 1 still unlocks after rotation", vault.unlock(authn))
