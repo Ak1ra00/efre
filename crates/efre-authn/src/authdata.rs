@@ -48,9 +48,17 @@ pub struct AttestedCredential<'a> {
 /// The authenticator extension outputs efre cares about. Unknown extensions are ignored.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Extensions {
+    /// MakeCredential: whether the credential was created with hmac-secret.
     pub hmac_secret: Option<bool>,
+    /// GetAssertion: the hmac-secret output was present (encrypted under the platform's
+    /// PIN/UV-protocol secret; Windows decrypts it separately into `pHmacSecret`).
+    pub hmac_secret_output: bool,
     pub cred_protect: Option<u8>,
 }
+
+/// Lengths of an encrypted hmac-secret output: one or two 32-byte outputs, plus a
+/// 16-byte IV under PIN/UV auth protocol 2 (CTAP 2.1 §12.5).
+const HMAC_SECRET_OUTPUT_LENS: [usize; 4] = [32, 48, 64, 80];
 
 fn invalid(what: &'static str) -> AuthnError {
     AuthnError::InvalidResponse(what)
@@ -133,7 +141,18 @@ fn parse_extensions(d: &mut Decoder<'_>) -> Result<Extensions, AuthnError> {
         }
         seen.push(key);
         match key {
-            "hmac-secret" => out.hmac_secret = Some(d.bool().map_err(|_| bad())?),
+            // A bool at registration; the encrypted salt output at assertion.
+            "hmac-secret" => match d.datatype().map_err(|_| bad())? {
+                Type::Bool => out.hmac_secret = Some(d.bool().map_err(|_| bad())?),
+                Type::Bytes => {
+                    let len = d.bytes().map_err(|_| bad())?.len();
+                    if !HMAC_SECRET_OUTPUT_LENS.contains(&len) {
+                        return Err(bad());
+                    }
+                    out.hmac_secret_output = true;
+                }
+                _ => return Err(bad()),
+            },
             "credProtect" => out.cred_protect = Some(d.u8().map_err(|_| bad())?),
             _ => d.skip().map_err(|_| bad())?,
         }
@@ -232,6 +251,7 @@ pub(crate) mod tests {
                 ExtValue::Bool(b) => e.bool(*b).unwrap(),
                 ExtValue::Int(i) => e.u8(*i).unwrap(),
                 ExtValue::Text(t) => e.str(t).unwrap(),
+                ExtValue::Bytes(n) => e.bytes(&vec![0x5A; *n]).unwrap(),
             };
         }
         e.into_writer()
@@ -242,6 +262,7 @@ pub(crate) mod tests {
         Bool(bool),
         Int(u8),
         Text(&'static str),
+        Bytes(usize),
     }
 
     pub(crate) const CRED: &[u8] = &[0xC7; 64];
@@ -291,6 +312,7 @@ pub(crate) mod tests {
             auth.extensions,
             Extensions {
                 hmac_secret: Some(true),
+                hmac_secret_output: false,
                 cred_protect: Some(3)
             }
         );
@@ -310,6 +332,41 @@ pub(crate) mod tests {
         let mut other_rp = build(FLAG_UP | FLAG_UV, None, None);
         other_rp[0] ^= 1;
         assert!(check_assertion(&parse(&other_rp).unwrap()).is_err());
+    }
+
+    /// Real YubiKeys put the encrypted hmac-secret output in the assertion's
+    /// authenticator data (found on the first hardware run, Windows API 9).
+    #[test]
+    fn parses_an_assertion_with_hmac_secret_output() {
+        for len in HMAC_SECRET_OUTPUT_LENS {
+            let ext = extensions(&[("hmac-secret", ExtValue::Bytes(len))]);
+            let bytes = build(FLAG_UP | FLAG_UV | FLAG_ED, None, Some(ext));
+            let auth = parse(&bytes).unwrap();
+            assert!(auth.extensions.hmac_secret_output, "length {len}");
+            assert_eq!(auth.extensions.hmac_secret, None);
+            check_assertion(&auth).unwrap();
+        }
+        for len in [0, 16, 31, 33, 96] {
+            let ext = extensions(&[("hmac-secret", ExtValue::Bytes(len))]);
+            let bytes = build(FLAG_UP | FLAG_UV | FLAG_ED, None, Some(ext));
+            assert!(parse(&bytes).is_err(), "length {len}");
+        }
+        // Indefinite-length byte string.
+        let ext = vec![
+            0xA1, 0x6B, b'h', b'm', b'a', b'c', b'-', b's', b'e', b'c', b'r', b'e', b't', 0x5F,
+            0xFF,
+        ];
+        assert!(parse(&build(FLAG_UP | FLAG_UV | FLAG_ED, None, Some(ext))).is_err());
+        // An assertion-style output does not satisfy registration.
+        let ext = extensions(&[
+            ("credProtect", ExtValue::Int(3)),
+            ("hmac-secret", ExtValue::Bytes(32)),
+        ]);
+        let bytes = build(REG_FLAGS, Some(CRED), Some(ext));
+        assert_eq!(
+            check_registration(&parse(&bytes).unwrap(), CRED),
+            Err(AuthnError::UnsupportedPlatform)
+        );
     }
 
     #[test]
