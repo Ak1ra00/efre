@@ -127,7 +127,13 @@ impl Store {
             tx.commit()?;
             conn.close().map_err(|(_, e)| VaultError::from(e))?;
         }
-        fs::File::open(&tmp)?.sync_all()?;
+        // Flush to disk before linking into place. Windows' FlushFileBuffers needs a
+        // handle with write access.
+        fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&tmp)?
+            .sync_all()?;
         if let Err(e) = fs::hard_link(&tmp, path) {
             let _ = fs::remove_file(&tmp);
             return Err(e.into());
@@ -138,7 +144,14 @@ impl Store {
 
     /// Opens an existing vault and checks that it is an intact efre vault.
     pub(crate) fn open(path: &Path) -> Result<Self> {
-        if !path.is_file() {
+        // Refuse a vault path that is a symbolic link. SQLITE_OPEN_NOFOLLOW only does
+        // this on Unix; SQLite's Windows VFS ignores it. Links on the folder itself
+        // (junctions) are checked by the app (ARCHITECTURE §7).
+        let meta = fs::symlink_metadata(path)?;
+        if meta.file_type().is_symlink() {
+            return Err(VaultError::Invalid("the vault path is a link"));
+        }
+        if !meta.is_file() {
             return Err(VaultError::NotFound);
         }
         let conn = open_connection(path, false)?;

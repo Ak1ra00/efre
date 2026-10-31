@@ -480,6 +480,7 @@ decrypts but fails decoding or validation makes the vault refuse to open.
      in one transaction, then close it and flush it to disk.
    - **Hard-link** it to `vault.efre`, which fails if that name already exists,
      so efre can never overwrite a vault. Then remove the temporary name.
+     NTFS, the system drive's file system, supports hard links.
    - Nothing reaches disk before this step. Non-discoverable credentials keep
      no state on the YubiKey, so an aborted wizard leaves nothing behind.
 
@@ -554,7 +555,9 @@ efre locks immediately if no YubiKey is present.
 - SQLite comes from `rusqlite` with the `bundled` feature, so the SQLite
   version is pinned rather than whatever the system ships.
 - Connection hardening, applied before anything reads the file:
-  - opened with `SQLITE_OPEN_NOFOLLOW`, so symlinks are refused;
+  - the vault file must not be a symbolic link. `efre-core` checks this on
+    every platform; `SQLITE_OPEN_NOFOLLOW` repeats the check on Unix only,
+    because SQLite's Windows VFS ignores it;
   - `SQLITE_DBCONFIG_DEFENSIVE` on;
   - triggers, views, trusted schema and `ATTACH`-create off;
   - no extension loading.

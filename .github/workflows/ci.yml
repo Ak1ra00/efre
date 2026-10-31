@@ -57,7 +57,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
-      - run: cargo test --workspace --locked
+      - run: cargo test --workspace --locked --no-fail-fast
       - name: Release builds cannot include the mock authenticator
         shell: bash
         run: |
@@ -92,7 +92,7 @@ jobs:
         run: rustup toolchain install
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo clippy --locked -p efre-core -p efre-authn --all-targets -- -D warnings
-      - run: cargo test --locked -p efre-core -p efre-authn
+      - run: cargo test --locked --no-fail-fast -p efre-core -p efre-authn
 
   supply-chain:
     name: Supply chain (cargo-deny, cargo-audit)

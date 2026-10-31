@@ -346,6 +346,15 @@ fn storage_level_tampering() {
     assert!(matches!(Vault::open(&fx.path), Err(VaultError::NotFound)));
 }
 
+#[cfg(unix)]
+#[test]
+fn symlinked_vault_path_is_refused() {
+    let (fx, _) = vault_with_items();
+    let link = fx.dir.file("link.efre");
+    std::os::unix::fs::symlink(&fx.path, &link).unwrap();
+    assert!(matches!(Vault::open(&link), Err(VaultError::Invalid(_))));
+}
+
 #[test]
 fn damaged_database_pages_are_refused() {
     let (fx, _) = vault_with_items();
