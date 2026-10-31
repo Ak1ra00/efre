@@ -1,0 +1,56 @@
+{
+  "productName": "efre",
+  "version": "0.1.0",
+  "identifier": "io.github.ak1ra00.efre",
+  "build": {
+    "beforeDevCommand": "npm run dev:web",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [],
+    "security": {
+      "csp": {
+        "default-src": "'none'",
+        "script-src": "'self'",
+        "style-src": "'self'",
+        "img-src": "'self' data:",
+        "font-src": "'self'",
+        "connect-src": "ipc: http://ipc.localhost",
+        "base-uri": "'none'",
+        "form-action": "'none'",
+        "frame-ancestors": "'none'",
+        "object-src": "'none'"
+      },
+      "devCsp": {
+        "default-src": "'none'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data:",
+        "font-src": "'self'",
+        "connect-src": "ipc: http://ipc.localhost ws://localhost:1420",
+        "base-uri": "'none'",
+        "form-action": "'none'",
+        "frame-ancestors": "'none'",
+        "object-src": "'none'"
+      },
+      "freezePrototype": true,
+      "assetProtocol": { "enable": false },
+      "pattern": { "use": "brownfield" },
+      "capabilities": ["main"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "category": "Utility",
+    "shortDescription": "Offline vault that opens only with your YubiKey",
+    "windows": {
+      "webviewInstallMode": { "type": "skip" },
+      "nsis": { "installMode": "currentUser" }
+    }
+  }
+}

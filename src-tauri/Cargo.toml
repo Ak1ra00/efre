@@ -1,0 +1,32 @@
+[package]
+name = "efre"
+description = "efre — offline vault that opens only with your YubiKey"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+# Dev-only: run the app against the deterministic mock authenticator.
+# A release build with this feature fails to compile (efre-authn/src/mock.rs).
+dev-mock = ["efre-authn/mock"]
+
+[build-dependencies]
+tauri-build.workspace = true
+
+[dependencies]
+efre-core.workspace = true
+efre-authn.workspace = true
+tauri.workspace = true
+tauri-plugin-single-instance.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+zeroize.workspace = true
+secrecy.workspace = true
+thiserror.workspace = true
+arboard.workspace = true
+
+[lints]
+workspace = true

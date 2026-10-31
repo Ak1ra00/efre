@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  RUST_BACKTRACE: "1"
+
+# Third-party actions are pinned to full commit SHAs (tag in the trailing comment).
+jobs:
+  frontend:
+    name: Frontend (tsc, eslint, vitest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - name: Audit shipped npm dependencies
+        run: npm audit --omit=dev --audit-level=low
+      - run: npm run build
+
+  rust:
+    name: Rust (fmt, clippy, test, mock exclusion)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      # src-tauri embeds dist/ at compile time.
+      - run: npm ci
+      - run: npm run build
+      - name: Install the pinned Rust toolchain (rust-toolchain.toml)
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      - name: Release builds cannot include the mock authenticator
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 1. Enabling the mock in a release build must be a compile error.
+          if cargo build --release --locked -p efre-authn --features mock 2> mock-release.log; then
+            echo "::error::release build with efre-authn/mock unexpectedly succeeded"
+            exit 1
+          fi
+          grep -q "must never be enabled in a release build" mock-release.log
+          # 2. The app's release feature graph must not enable the mock.
+          if cargo tree --locked -p efre -e features --target x86_64-pc-windows-msvc | grep -q 'efre-authn feature "mock"'; then
+            echo "::error::efre's release dependency graph enables efre-authn/mock"
+            exit 1
+          fi
+          # 3. Backstop: the release binary must not contain the mock's marker string.
+          cargo build --release --locked -p efre
+          if grep -q -a "EFRE-MOCK-AUTHENTICATOR-MUST-NOT-SHIP" target/release/efre.exe; then
+            echo "::error::mock authenticator marker found in release binary"
+            exit 1
+          fi
+          echo "mock exclusion: OK"
+
+  core-portable:
+    name: efre-core / efre-authn on Linux (platform independence)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned Rust toolchain (rust-toolchain.toml)
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: cargo clippy --locked -p efre-core -p efre-authn --all-targets -- -D warnings
+      - run: cargo test --locked -p efre-core -p efre-authn
+
+  supply-chain:
+    name: Supply chain (cargo-deny, cargo-audit)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned Rust toolchain (rust-toolchain.toml)
+        run: rustup toolchain install
+      - uses: taiki-e/install-action@68a389c788b2cd04016ce8c80ee23b80d2ab3d68 # v2.88.1
+        with:
+          tool: cargo-deny@0.20.2,cargo-audit@0.22.2
+      - name: cargo deny (bans incl. network crates/plugins, licenses, sources, advisories)
+        run: cargo deny --locked check
+      - name: cargo audit
+        run: cargo audit --deny warnings
+
+  bundle:
+    name: Unsigned Windows build (NSIS)
+    needs: [frontend, rust, supply-chain]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install the pinned Rust toolchain (rust-toolchain.toml)
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: tauri build (unsigned)
+        run: npm run tauri -- build --ci --bundles nsis
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: efre-windows-unsigned-${{ github.sha }}
+          path: |
+            target/release/bundle/nsis/*.exe
+            target/release/efre.exe
+          if-no-files-found: error
+          retention-days: 14

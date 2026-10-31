@@ -1,0 +1,117 @@
+# cargo-deny policy for efre. See docs/ARCHITECTURE.md §10 and §12.
+# CI fails on any violation. Never loosen the network bans.
+
+[graph]
+targets = ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"]
+all-features = false
+no-default-features = false
+
+[advisories]
+version = 2
+yanked = "deny"
+unmaintained = "workspace"
+ignore = []
+
+[licenses]
+version = 2
+confidence-threshold = 0.93
+allow = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BlueOak-1.0.0", # minicbor: permissive, OSI-approved
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "ISC",
+  "MIT",
+  "MIT-0",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+
+[licenses.private]
+# efre's own crates are unpublished (publish = false).
+ignore = true
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
+highlight = "all"
+deny = [
+  # --- HTTP / TLS / WebSocket / QUIC clients and servers: efre has no network access. ---
+  { crate = "reqwest", reason = "efre makes no network requests" },
+  { crate = "ureq", reason = "efre makes no network requests" },
+  { crate = "hyper", reason = "efre makes no network requests" },
+  { crate = "hyper-util", reason = "efre makes no network requests" },
+  { crate = "h2", reason = "efre makes no network requests" },
+  { crate = "h3", reason = "efre makes no network requests" },
+  { crate = "quinn", reason = "efre makes no network requests" },
+  { crate = "isahc", reason = "efre makes no network requests" },
+  { crate = "curl", reason = "efre makes no network requests" },
+  { crate = "curl-sys", reason = "efre makes no network requests" },
+  { crate = "attohttpc", reason = "efre makes no network requests" },
+  { crate = "surf", reason = "efre makes no network requests" },
+  { crate = "minreq", reason = "efre makes no network requests" },
+  { crate = "http-req", reason = "efre makes no network requests" },
+  { crate = "awc", reason = "efre makes no network requests" },
+  { crate = "actix-web", reason = "efre makes no network requests" },
+  { crate = "axum", reason = "efre makes no network requests" },
+  { crate = "warp", reason = "efre makes no network requests" },
+  { crate = "tiny_http", reason = "efre makes no network requests" },
+  { crate = "rustls", reason = "no TLS in efre (rustls-webpki alone is allowed for offline attestation checks)" },
+  { crate = "tokio-rustls", reason = "efre makes no network requests" },
+  { crate = "native-tls", reason = "efre makes no network requests" },
+  { crate = "tokio-native-tls", reason = "efre makes no network requests" },
+  { crate = "openssl", reason = "efre makes no network requests" },
+  { crate = "openssl-sys", reason = "efre makes no network requests" },
+  { crate = "tungstenite", reason = "efre makes no network requests" },
+  { crate = "tokio-tungstenite", reason = "efre makes no network requests" },
+  { crate = "async-tungstenite", reason = "efre makes no network requests" },
+  { crate = "websocket", reason = "efre makes no network requests" },
+  { crate = "trust-dns-resolver", reason = "efre makes no network requests" },
+  { crate = "hickory-resolver", reason = "efre makes no network requests" },
+  # --- Tauri plugins that reach the network, the shell or the file system. ---
+  { crate = "tauri-plugin-http", reason = "network plugin" },
+  { crate = "tauri-plugin-updater", reason = "no auto-updater" },
+  { crate = "tauri-plugin-websocket", reason = "network plugin" },
+  { crate = "tauri-plugin-upload", reason = "network plugin" },
+  { crate = "tauri-plugin-localhost", reason = "serves assets over a localhost HTTP server" },
+  { crate = "tauri-plugin-deep-link", reason = "external URL entry point" },
+  { crate = "tauri-plugin-shell", reason = "no shell access from the webview" },
+  { crate = "tauri-plugin-opener", reason = "no opening URLs/paths from the webview" },
+  { crate = "tauri-plugin-fs", reason = "no file system access from the webview" },
+  { crate = "tauri-plugin-sql", reason = "storage is efre-core only" },
+  { crate = "tauri-plugin-store", reason = "nothing is persisted outside the vault" },
+  { crate = "tauri-plugin-stronghold", reason = "crypto stays in efre-core" },
+  { crate = "tauri-plugin-log", reason = "no log files (secrets must never be logged)" },
+  { crate = "tauri-plugin-process", reason = "not needed" },
+  { crate = "tauri-plugin-clipboard-manager", reason = "clipboard is handled in Rust only" },
+  { crate = "tauri-plugin-dialog", reason = "not needed" },
+  { crate = "tauri-plugin-notification", reason = "not needed" },
+  { crate = "tauri-plugin-os", reason = "not needed" },
+  { crate = "tauri-plugin-persisted-scope", reason = "not needed" },
+  { crate = "tauri-plugin-window-state", reason = "nothing is persisted outside the vault" },
+  { crate = "tauri-plugin-barcode-scanner", reason = "not needed" },
+  { crate = "tauri-plugin-geolocation", reason = "not needed" },
+  { crate = "tauri-plugin-nfc", reason = "not needed" },
+  { crate = "tauri-plugin-biometric", reason = "not needed" },
+  { crate = "tauri-plugin-global-shortcut", reason = "not needed" },
+  { crate = "tauri-plugin-autostart", reason = "not needed" },
+  { crate = "tauri-plugin-cli", reason = "not needed" },
+  # --- Never allow alternative crypto stacks to creep in. ---
+  { crate = "rsa", reason = "RUSTSEC-2023-0071; not needed" },
+]
+
+# The `tauri` crate's TLS/devtools features would pull network code or enable devtools in release.
+[[bans.features]]
+crate = "tauri"
+deny = ["native-tls", "native-tls-vendored", "rustls-tls", "devtools", "isolation", "protocol-asset"]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

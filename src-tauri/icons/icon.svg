@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- efre app icon (original artwork): a lowercase "e" whose crossbar extends into a key blade. -->
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="512" y1="48" x2="512" y2="976">
+      <stop offset="0" stop-color="#1c1e24"/>
+      <stop offset="1" stop-color="#0c0d10"/>
+    </linearGradient>
+    <linearGradient id="glyph" gradientUnits="userSpaceOnUse" x1="202" y1="260" x2="812" y2="760">
+      <stop offset="0" stop-color="#b3b9ff"/>
+      <stop offset="1" stop-color="#7a83f5"/>
+    </linearGradient>
+  </defs>
+  <rect x="48" y="48" width="928" height="928" rx="208" fill="url(#bg)"/>
+  <rect x="52" y="52" width="920" height="920" rx="204" fill="none" stroke="#2c2f37" stroke-width="8"/>
+  <g transform="translate(-48 0)" fill="none" stroke="url(#glyph)" stroke-linecap="round" stroke-linejoin="round">
+    <!-- bowl: from the crossbar's right end, up and around, open at the lower right -->
+    <path d="M 682 512 A 190 190 0 1 0 638 654" stroke-width="80"/>
+    <!-- crossbar continuing out as the key blade -->
+    <path d="M 340 512 H 852" stroke-width="72"/>
+    <!-- key bits -->
+    <path d="M 764 512 V 604 M 846 512 V 580" stroke-width="56"/>
+  </g>
+</svg>

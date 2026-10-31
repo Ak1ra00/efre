@@ -1,0 +1,32 @@
+[package]
+name = "efre-authn"
+description = "efre authenticator abstraction: Windows WebAuthn (webauthn.dll) implementation and test mock"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+# Test/dev-only deterministic authenticator. Must never be enabled in release builds;
+# a release build with this feature fails to compile (see src/mock.rs).
+mock = ["dep:hmac"]
+
+[dependencies]
+sha2.workspace = true
+zeroize.workspace = true
+minicbor.workspace = true
+rustls-webpki.workspace = true
+thiserror.workspace = true
+hmac = { workspace = true, optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+  "Win32_Foundation",
+  "Win32_Networking_WindowsWebServices",
+  "Win32_System_LibraryLoader",
+] }
+
+[lints]
+workspace = true

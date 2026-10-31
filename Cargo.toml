@@ -1,0 +1,60 @@
+[workspace]
+resolver = "3"
+members = ["crates/efre-core", "crates/efre-authn", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+publish = false
+license = "LicenseRef-Proprietary"
+repository = "https://github.com/Ak1ra00/efre"
+
+# Every dependency is justified in docs/ARCHITECTURE.md §12.
+[workspace.dependencies]
+efre-core = { path = "crates/efre-core" }
+efre-authn = { path = "crates/efre-authn" }
+
+chacha20poly1305 = { version = "0.11", default-features = false, features = ["alloc", "zeroize"] }
+hkdf = "0.13"
+sha2 = { version = "0.11", default-features = false, features = ["zeroize"] }
+hmac = { version = "0.13", features = ["zeroize"] }
+rand = { version = "0.10", default-features = false, features = ["std", "sys_rng"] }
+zeroize = { version = "1.9", features = ["derive"] }
+secrecy = "0.10"
+subtle = "2.6"
+rusqlite = { version = "0.41", default-features = false, features = ["bundled"] }
+minicbor = { version = "2.3", features = ["alloc", "derive"] }
+rustls-webpki = { version = "0.103", default-features = false, features = ["alloc", "ring"] }
+thiserror = "2"
+windows = "0.62"
+arboard = { version = "3.7", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2.12", default-features = false, features = ["wry", "common-controls-v6", "compression", "dynamic-acl"] }
+tauri-build = { version = "2.7", default-features = false, features = ["config-json"] }
+tauri-plugin-single-instance = "2.5"
+proptest = "1.12"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+undocumented_unsafe_blocks = "deny"
+multiple_unsafe_ops_per_block = "deny"
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+mem_forget = "deny"
+
+[profile.release]
+panic = "abort"
+overflow-checks = true
+lto = true
+codegen-units = 1
+strip = "debuginfo"

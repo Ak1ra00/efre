@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* Design tokens (refined in phase 4). One accent colour; dark neutral palette; 8 px grid. */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-bg: #0e0f11;
+  --color-surface: #15161a;
+  --color-elevated: #1b1d22;
+  --color-border: #26282e;
+  --color-fg: #ececef;
+  --color-muted: #9b9ea8;
+  --color-accent: #8b93ff;
+  --color-accent-fg: #0e0f11;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

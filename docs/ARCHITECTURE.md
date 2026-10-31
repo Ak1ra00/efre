@@ -631,6 +631,11 @@ See §3.3 for what it doesn't block.
   - every network-capable Tauri plugin.
 
   CI fails if any of them appears in the graph.
+  - One known caveat: tokio's `net` feature is compiled in, because
+    `tauri-plugin-single-instance` enables it for its macOS Unix-socket path.
+    On Windows that plugin uses only a named mutex and `WM_COPYDATA`. No
+    efre or Tauri code path opens a socket, and the runtime
+    zero-connection check verifies this.
 - **WebView2:**
   - The CSP allows no remote origins, navigation is blocked, and the webview is
     incognito.
@@ -693,7 +698,7 @@ published.
 | `secrecy` | 0.10 | core, app | `SecretBox` with redacted Debug |
 | `subtle` | 2.6 | core | Constant-time compares (VMK equality in §6.3) |
 | `rusqlite` (`bundled`) | 0.41 | core | SQLite storage with a pinned engine |
-| `minicbor` (+ derive) | 2.x | core, authn | Record payload encoding, and parsing the CBOR in authData and attestation. One small no_std codec instead of two. |
+| `minicbor` (+ derive) | 2.x | core, authn | Record payload encoding, and parsing the CBOR in authData and attestation. One small no_std codec instead of two. Licensed BlueOak-1.0.0 (permissive, OSI-approved; allowed in `deny.toml`). |
 | `thiserror` | 2 | all | Error enums. They never carry secret data. |
 | `windows` | 0.62 | authn, app | Win32 bindings: WebAuthn types, `LoadLibraryExW`, windows/power/session/device notifications, WER, clipboard sequence, `VirtualLock` |
 | `rustls-webpki` (+ `ring`) | 0.103 | authn | X.509 path validation for YubiKey attestation, and ES256 signature verification. This is a widely deployed, well-reviewed verifier; we don't hand-write chain validation. It is pure verification with no network, revocation or TLS (`rustls` itself stays banned). Kept only if it accepts Yubico's real certificates under its normal rules in phase 3; otherwise efre stops and reports. |

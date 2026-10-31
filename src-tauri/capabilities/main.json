@@ -1,0 +1,6 @@
+{
+  "identifier": "main",
+  "description": "Least privilege for efre's only window. efre's own commands are added here in phase 4; no plugin permissions are granted.",
+  "windows": ["main"],
+  "permissions": []
+}
