@@ -26,6 +26,9 @@ windows = { workspace = true, features = [
   "Win32_Foundation",
   "Win32_Networking_WindowsWebServices",
   "Win32_System_LibraryLoader",
+  # presence_windows: HID interface enumeration and arrival/removal notifications
+  "Win32_Devices_DeviceAndDriverInstallation",
+  "Win32_Devices_HumanInterfaceDevice",
 ] }
 
 [lints]

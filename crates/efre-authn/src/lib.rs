@@ -22,5 +22,10 @@ pub use types::{
 #[cfg(feature = "mock")]
 pub mod mock;
 
+pub mod presence;
+
+#[cfg(windows)]
+pub mod presence_windows;
+
 #[cfg(windows)]
 pub mod windows;
