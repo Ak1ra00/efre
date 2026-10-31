@@ -91,16 +91,21 @@ mod flow {
         let _ = io::stdin().lock().read_line(&mut line);
     }
 
-    fn progress(step: KeyStep<'_>) {
-        match step {
-            KeyStep::UseEnrolledKey => {
-                println!("    (Windows asks for an ENROLLED key: PIN or fingerprint, then touch)");
+    /// Says, before each Windows Security prompt, which key it is for and why.
+    fn progress_for(key: &'static str) -> impl FnMut(KeyStep<'_>) {
+        move |step| match step {
+            KeyStep::UseEnrolledKey => println!(
+                "    -> Windows prompt: confirm with an enrolled key ({key}). PIN, then touch {key}."
+            ),
+            KeyStep::CreateCredential => println!(
+                "    -> Windows prompt 1 of 2 for {key}: create its credential. PIN, then touch {key}."
+            ),
+            KeyStep::ConfirmNewKey => println!(
+                "    -> Windows prompt 2 of 2 for {key}: confirm it. SAME key again: PIN, then touch {key}."
+            ),
+            KeyStep::UseKey { nickname } => {
+                println!("    -> Windows prompt for {key} (\"{nickname}\"): PIN, then touch {key}.")
             }
-            KeyStep::CreateCredential => {
-                println!("    (Windows creates a credential on the inserted key: PIN, then touch)");
-            }
-            KeyStep::ConfirmNewKey => println!("    (touch the SAME key again to confirm it)"),
-            KeyStep::UseKey { nickname } => println!("    (insert \"{nickname}\" and touch it)"),
         }
     }
 
@@ -168,8 +173,17 @@ mod flow {
         watch_presence: &dyn Fn() -> Result<String, String>,
     ) -> i32 {
         let mut t = Tally::default();
-        println!("efre hardware check: two YubiKeys, a throwaway vault, about 12 Windows prompts.");
-        println!("Each key gets a few non-discoverable credentials; they use no passkey slots.");
+        println!("efre hardware check: two YubiKeys (KEY 1 and KEY 2) and a throwaway vault.");
+        println!();
+        println!("How it works:");
+        println!("  * Before every step, a '>>>' line tells you which key to plug in. Plug in");
+        println!("    ONLY that key, then press Enter.");
+        println!("  * Before every Windows Security prompt, a '->' line says which key it is for.");
+        println!("    Each prompt: PIN (or fingerprint), then touch the key.");
+        println!(
+            "  * Enrolling a key takes 2 prompts in a row for the SAME key. That is expected."
+        );
+        println!("  * About 12 prompts in total. Credentials made here use no passkey slots.");
 
         println!("\n[1] Windows WebAuthn API version: {api_version}");
         if api_version >= 4 {
@@ -196,7 +210,11 @@ mod flow {
             }
         };
         println!("      Throwaway vault folder: {}", dir.display());
-        steps(&mut t, authn, &dir.join("vault.efre"), watch_presence);
+        if !steps(&mut t, authn, &dir.join("vault.efre"), watch_presence) {
+            println!();
+            println!("Stopped early: the remaining steps need the one that failed, so they were");
+            println!("skipped. Nothing more will be asked.");
+        }
 
         println!("\n[9] Clean up.");
         match std::fs::remove_dir_all(&dir) {
@@ -220,50 +238,58 @@ mod flow {
         authn: &dyn Authenticator,
         path: &Path,
         watch_presence: &dyn Fn() -> Result<String, String>,
-    ) {
-        println!("\n[2] Create a vault and enroll both keys (2 prompts per key).");
+    ) -> bool {
+        println!("\n[2] Enroll KEY 1, then KEY 2 (2 Windows prompts per key).");
         let Some(mut builder) = t.check("start a vault", VaultBuilder::new()) else {
-            return;
+            return false;
         };
-        pause("Insert KEY 1 only (unplug key 2).");
+        pause("Plug in KEY 1 only (unplug KEY 2).");
         let Some(k1) = t.check(
-            "enroll key 1 (attestation + hmac-secret + credProtect checks)",
-            builder.enroll_key(authn, "Key 1", &mut progress),
+            "enroll KEY 1 (attestation + hmac-secret + credProtect checks)",
+            builder.enroll_key(authn, "Key 1", &mut progress_for("KEY 1")),
         ) else {
-            return;
+            return false;
         };
         println!("      Key 1 AAGUID {}", uuid(&k1.aaguid));
-        pause("Keep KEY 1 inserted: enrolling it a second time must be refused.");
+        pause(
+            "Keep KEY 1 plugged in. Now efre tries to enroll KEY 1 a second time, which must be refused.",
+        );
         t.expect_refused(
-            "re-enrolling key 1",
-            builder.enroll_key(authn, "Key 1 again", &mut progress),
+            "re-enrolling KEY 1",
+            builder.enroll_key(authn, "Key 1 again", &mut |_| {
+                println!(
+                    "    -> Windows prompt for KEY 1: PIN, then touch. Windows should then say this key is already registered; close that message."
+                );
+            }),
             &AuthnError::AlreadyEnrolled,
         );
-        pause("Unplug key 1. Insert KEY 2 only.");
+        pause("Unplug KEY 1. Plug in KEY 2 only.");
         let Some(k2) = t.check(
-            "enroll key 2",
-            builder.enroll_key(authn, "Key 2", &mut progress),
+            "enroll KEY 2",
+            builder.enroll_key(authn, "Key 2", &mut progress_for("KEY 2")),
         ) else {
-            return;
+            return false;
         };
         println!("      Key 2 AAGUID {}", uuid(&k2.aaguid));
         let Some(mut vault) = t.check("write the vault file", builder.create(path)) else {
-            return;
+            return false;
         };
         let secret = format!("hwcheck-{:x}", nanos());
         let Some(item) = t.check("create a test item", vault.create_item(test_item(&secret)))
         else {
-            return;
+            return false;
         };
         drop(vault);
 
         println!("\n[3] Unlock with each key (1 prompt each).");
         let Some(mut vault) = t.check("reopen the vault (locked)", Vault::open(path)) else {
-            return;
+            return false;
         };
         for n in [1, 2] {
-            pause(&format!("Insert KEY {n} only."));
-            if t.check(&format!("unlock with key {n}"), vault.unlock(authn))
+            pause(&format!(
+                "Plug in KEY {n} only. One Windows prompt: PIN, then touch KEY {n}."
+            ));
+            if t.check(&format!("unlock with KEY {n}"), vault.unlock(authn))
                 .is_some()
             {
                 verify_item(t, &vault, item, &secret);
@@ -272,30 +298,32 @@ mod flow {
         }
 
         println!("\n[4] Outcomes the Windows dialog handles.");
-        pause("Insert KEY 1. When the Windows Security dialog appears, press CANCEL.");
+        pause("Plug in KEY 1 only. When the Windows Security dialog appears, press CANCEL.");
         t.expect_refused(
             "cancelled unlock",
             vault.unlock(authn),
             &AuthnError::Cancelled,
         );
-        pause("Enter a WRONG PIN once (Windows shows the error), then the CORRECT PIN and touch.");
+        pause(
+            "Keep KEY 1 plugged in. In the next prompt, enter a WRONG PIN once (Windows shows the error), then the CORRECT PIN and touch KEY 1.",
+        );
         t.check("wrong PIN, then right PIN, unlocks", vault.unlock(authn));
         if !vault.is_unlocked() {
-            pause("The next steps need the vault unlocked: keep KEY 1 inserted.");
-            if t.check("unlock with key 1", vault.unlock(authn)).is_none() {
-                return;
+            pause("The next steps need the vault unlocked: keep KEY 1 plugged in.");
+            if t.check("unlock with KEY 1", vault.unlock(authn)).is_none() {
+                return false;
             }
         }
         let Some(key2) = vault.slots().get(1).map(|s| s.id) else {
             t.fail("find key 2's slot", "missing");
-            return;
+            return false;
         };
 
-        println!("\n[5] Rename key 2 (a fresh PIN + touch on an enrolled key).");
-        pause("Keep KEY 1 inserted.");
+        println!("\n[5] Rename KEY 2 (needs a fresh PIN + touch on an enrolled key).");
+        pause("Keep KEY 1 plugged in.");
         if t.check(
             "rename key 2",
-            vault.rename_key(authn, key2, "Key 2 (renamed)", &mut progress),
+            vault.rename_key(authn, key2, "Key 2 (renamed)", &mut progress_for("KEY 1")),
         )
         .is_some()
         {
@@ -310,24 +338,24 @@ mod flow {
             }
         }
 
-        println!("\n[6] Remove key 2 and rotate the vault key (touch key 1 once).");
-        pause("Keep KEY 1 inserted.");
+        println!("\n[6] Remove KEY 2 and rotate the vault key (one prompt, for KEY 1).");
+        pause("Keep KEY 1 plugged in.");
         t.check(
             "remove key 2 + rotate the vault key",
-            vault.remove_key(authn, key2, &mut progress),
+            vault.remove_key(authn, key2, &mut progress_for("KEY 1")),
         );
         vault.lock();
 
         println!("\n[7] The removed key must now be refused.");
         pause(
-            "Unplug key 1. Insert KEY 2 only. If Windows says the key isn't recognised, press Cancel.",
+            "Unplug KEY 1. Plug in KEY 2 only. If Windows says the key isn't recognised, press Cancel.",
         );
         t.expect_refused(
             "removed key 2",
             vault.unlock(authn),
             &AuthnError::UnknownKey,
         );
-        pause("Unplug key 2. Insert KEY 1 only.");
+        pause("Unplug KEY 2. Plug in KEY 1 only. One Windows prompt: PIN, then touch KEY 1.");
         if t.check("key 1 still unlocks after rotation", vault.unlock(authn))
             .is_some()
         {
@@ -341,6 +369,7 @@ mod flow {
             Ok(summary) => t.pass(&format!("presence watcher: {summary}")),
             Err(why) => t.fail("presence watcher", &why),
         }
+        true
     }
 }
 
