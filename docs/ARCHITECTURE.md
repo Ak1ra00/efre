@@ -9,7 +9,7 @@ Priorities, in order: security, reliability, UX, features (see `docs/SPEC.md`).
 
 ## 1. What efre is
 
-efre is an offline Windows desktop vault for one person. It opens only after a
+**efre** means *cave* in Tamazight. It is an offline Windows desktop vault for one person. It opens only after a
 FIDO2 assertion from an enrolled YubiKey: PIN (or fingerprint on a YubiKey Bio)
 plus touch. There is no master password and no recovery code. Recovery means
 using a second, enrolled YubiKey.

@@ -1,6 +1,6 @@
 # efre — agent guide
 
-An offline, single-user Windows vault that opens only with an enrolled YubiKey.
+**efre** (Tamazight for *cave*) is an offline, single-user Windows vault that opens only with an enrolled YubiKey.
 Read `docs/SPEC.md` (the brief) and `docs/ARCHITECTURE.md` (the design; §5 is normative) before changing anything.
 Priorities: security > reliability > UX > features. Don't add features beyond the brief.
 
@@ -35,3 +35,8 @@ npm run tauri build                      # unsigned NSIS installer (Windows)
 - IPC commands stay thin: validate input, call `efre-core`, map errors to stable codes.
 - TypeScript is strict, with no `any`. Never store anything in `localStorage`, `sessionStorage` or IndexedDB.
 - End each phase with green tests, clean lint, a commit, a summary, and a Windows manual-test checklist.
+
+## Git authorship (owner's rule)
+- The repo owner is the sole author and committer of every commit. Never list an AI assistant or its vendor as an author, committer or co-author.
+- No AI co-author or session trailers, and no "generated with" lines in commits, PR descriptions or comments.
+- The identity is set in this repo's git config: `Ak1ra00 <162945952+Ak1ra00@users.noreply.github.com>`.
