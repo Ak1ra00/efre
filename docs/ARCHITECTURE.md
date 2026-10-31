@@ -1,8 +1,12 @@
 # efre — Architecture
 
-Status: **Phase 2.** `efre-core` and the mock authenticator implement §5–§7
-exactly. The Windows authenticator (§4) arrives in phase 3, the app (§8–§10) in
-phase 4. Decisions D1–D5 were accepted with their defaults (§14).
+Status: **Phase 3.**
+- `efre-core` and the mock implement §5–§7.
+- `efre-authn` now has the Windows WebAuthn driver (§4), attestation
+  verification and the YubiKey presence watcher. It is CI-verified on Windows
+  but not yet tested on real hardware (`docs/HARDWARE_TESTS.md`).
+- The app (§8–§10) is phase 4.
+- Decisions D1–D5 were accepted with their defaults (§14).
 
 Priorities, in order: security, reliability, UX, features (see `docs/SPEC.md`).
 
@@ -162,20 +166,42 @@ highest version ≤ 7 that the runtime supports:
 | `pCancellationId` | From `WebAuthNGetCancellationId`, so a lock can cancel the dialog |
 | `hWnd` | efre's main window |
 
-Response checks. **All must pass**, or efre discards the credential and nothing is written:
+Response checks. **All must pass**, or efre discards the credential and nothing is
+written. Checks 1–4 run before 5–6, so a non-YubiKey is reported as rejected
+attestation rather than as "update Windows".
 1. `pwszFormatType == "packed"`, with an x5c chain (full basic attestation; self-attestation is refused).
-2. **Attestation chain:** x5c[0..] chains to a pinned Yubico FIDO attestation
-   root, checked with `rustls-webpki` (§12). The roots are embedded as DER, and
-   their SHA-256 fingerprints are asserted in a unit test. Expected roots:
-   *Yubico U2F Root CA Serial 457200631* (older firmware) and Yubico's newer
-   2024/2025 FIDO attestation root (firmware 5.7.4+). The exact certificates and
-   fingerprints are pinned in phase 3 from developers.yubico.com, cross-checked
-   against the FIDO Metadata Service. There are no network calls at runtime and
-   no revocation fetching.
+2. **Attestation chain:** x5c[0..] chains, under `rustls-webpki` (§12), to
+   one of these pinned trust anchors (`crates/efre-authn/src/roots/`; SHA-256
+   fingerprints are asserted by a unit test and listed in `roots/README.md`):
+   - *Yubico U2F Root CA Serial 457200631*, for firmware before 5.7.4;
+   - *Yubico FIDO Root CA Serial 450203556* (2024);
+   - the three FIDO issuing CAs under *Yubico Attestation Root 1*: *Yubico FIDO
+     Attestation A 1*, *B 1* and *B2 1*. Root 1 itself is not trusted, because
+     it also certifies Yubico's PIV, OpenPGP and HSM branches.
+
+   Sources:
+   - Yubico's PGP-signed CA bundle from the developers.yubico.com source
+     repository. The signature was verified against a Yubico engineer's key,
+     which also signs Yubico's Maven Central releases.
+   - The U2F root was also cross-checked byte-for-byte against an independent
+     project.
+
+   What is checked and what is not:
+   - webpki checks signatures, validity at the current time, basic constraints
+     and path length, name chaining, and unknown critical extensions.
+   - It does not check revocation (efre is offline by design) or certificate
+     policies.
+   - Any EKU, or none, is accepted.
+
+   No network is used at runtime. If Yubico adds a new FIDO issuing CA, keys
+   under it are refused until `roots/` is updated.
 3. The attestation signature over `authData || SHA-256(clientDataJSON)` verifies with x5c[0]'s key, and `alg` is ES256.
-4. If x5c[0] carries the `id-fido-gen-ce-aaguid` extension (1.3.6.1.4.1.45724.1.1.4), it equals the AAGUID in authData.
+4. x5c[0] **must** carry the `id-fido-gen-ce-aaguid` extension (1.3.6.1.4.1.45724.1.1.4), and it must equal the AAGUID in authData. This is required for multi-model roots (WebAuthn §8.2.1). Its subject OU must be "Authenticator Attestation".
 5. authData: `rpIdHash == SHA-256("efre:")`; flags UP (0x01), UV (0x04), AT (0x40) and ED (0x80) are set, and BE/BS (0x08/0x10) are clear (not a synced passkey); the credential id equals `pbCredentialId` and is 1..=1023 bytes.
 6. The authData extensions map contains `"hmac-secret": true` and `"credProtect": 3` (see §4.4).
+   - If either is missing, or hmac-secret is false, the result is
+     `UnsupportedPlatform` (D1).
+   - A credProtect level other than 3 is `AttestationRejected`.
 7. When the struct version provides it, `bResidentKey == FALSE`.
 8. When the struct version provides it, `dwUsedTransport == USB`. NFC and hybrid are refused.
 
@@ -648,7 +674,7 @@ efre locks immediately if no YubiKey is present.
 | Idle (default 5 min) | Rust-side deadline, reset by user input inside efre (throttled pings from the UI) and by IPC activity |
 | Sleep / hibernate | `PowerRegisterSuspendResumeNotification(DEVICE_NOTIFY_CALLBACK)`, `PBT_APMSUSPEND`. The lock happens before RAM goes to `hiberfil.sys`. |
 | Windows lock / user switch | `WTSRegisterSessionNotification` on a hidden window: `WTS_SESSION_LOCK`, `WTS_CONSOLE_DISCONNECT`, `WTS_REMOTE_DISCONNECT`, `WTS_SESSION_LOGOFF` |
-| YubiKey unplugged | `CM_Register_Notification` on `GUID_DEVINTERFACE_HID`. Each arrival or removal re-enumerates present HID interfaces (`CM_Get_Device_Interface_List`) and checks for `VID_1050`. Locks when none remain (see §6.7). No device is opened, so no admin is needed. |
+| YubiKey unplugged | `CM_Register_Notification` on `GUID_DEVINTERFACE_HID` (`efre_authn::presence_windows::PresenceWatcher`). Each arrival or removal re-enumerates present HID interfaces (`CM_Get_Device_Interface_List`) and looks for `VID_1050` as a whole token of the hardware id. efre locks when none remain (see §6.7). Only changes are reported, and a failed enumeration counts as "no YubiKey". No device is opened, so no admin is needed. |
 | Ctrl+L / quit | Direct |
 
 ### 8.6 Screenshot blocking
@@ -751,6 +777,18 @@ See §3.3 for what it doesn't block.
 
   An extra `ubuntu-latest` job runs the `efre-core` and `efre-authn` tests to
   prove they are platform-independent.
+- **Hardware (phase 3):** `cargo run -p efre-core --example hardware_check` on
+  Windows with two real YubiKeys, following `docs/HARDWARE_TESTS.md`. The
+  example never touches `%LOCALAPPDATA%\efre`.
+- **Phase 3 unit tests** cover:
+  - the authenticator-data parser and every registration and assertion rule;
+  - a real YubiKey 5Ci packed attestation (from webauthn-rs, MPL-2.0) that
+    verifies, and is rejected after any tampering, with the wrong anchors, or
+    outside its validity period;
+  - client-data JSON and base64url (RFC 4648 vectors);
+  - HRESULT mapping;
+  - presence-path parsing;
+  - parsers that never panic.
 - **Tests (phase 2):** `cargo test -p efre-core -p efre-authn`.
   - **Unit tests:**
     - KEK and subkeys checked against an independent HKDF computation;
@@ -798,7 +836,7 @@ published.
 | `hkdf` | 0.13 | core | HKDF-SHA256 |
 | `sha2` | 0.11 | core, authn | SHA-256 |
 | `hmac` | 0.13 | core, authn (mock) | HMAC-SHA256 header/manifest MAC, mock PRF |
-| `rand` | 0.10 | core | OS CSPRNG |
+| `rand` | 0.10 | core, authn (Windows) | OS CSPRNG (vault keys, nonces, salts; WebAuthn challenges) |
 | `zeroize` | 1.9 | all | Wipe secrets on drop |
 | `secrecy` | 0.10 | core, app | `SecretBox` with redacted Debug |
 | `subtle` | 2.6 | core | Constant-time compares (VMK equality in §6.3) |
@@ -806,7 +844,8 @@ published.
 | `minicbor` (+ derive) | 2.x | core, authn | Record payload encoding, and parsing the CBOR in authData and attestation. One small no_std codec instead of two. Licensed BlueOak-1.0.0 (permissive, OSI-approved; allowed in `deny.toml`). |
 | `thiserror` | 2 | all | Error enums. They never carry secret data. |
 | `windows` | 0.62 | authn, app | Win32 bindings: WebAuthn types, `LoadLibraryExW`, windows/power/session/device notifications, WER, clipboard sequence, `VirtualLock` |
-| `rustls-webpki` (+ `ring`) | 0.103 | authn | X.509 path validation for YubiKey attestation, and ES256 signature verification. This is a widely deployed, well-reviewed verifier; we don't hand-write chain validation. It is pure verification with no network, revocation or TLS (`rustls` itself stays banned). Kept only if it accepts Yubico's real certificates under its normal rules in phase 3; otherwise efre stops and reports. |
+| `rustls-webpki` (+ `ring`) | 0.103 | authn | X.509 path validation for YubiKey attestation, and ES256 signature verification. This is a widely deployed, well-reviewed verifier; we don't hand-write chain validation. It is pure verification with no network, revocation or TLS (`rustls` itself stays banned). It accepts a real YubiKey 5Ci attestation under its normal rules. The one customisation is that EKU is not required. |
+| `rustls-pki-types` | 1.15 | authn | Certificate and time types for rustls-webpki, without default features. It is already in the graph through rustls-webpki. |
 | `arboard` | 3.7 | app | Clipboard with Windows history/cloud/monitoring exclusions |
 | `tauri` | 2.12 | app | App shell, without the devtools feature |
 | `tauri-build` | 2.x | app (build) | Required by Tauri |
@@ -837,10 +876,13 @@ chosen and justified in phase 4.
 ```
 Cargo.toml              workspace
 crates/efre-core/       vault format + crypto + storage
-crates/efre-authn/      Authenticator trait, windows.rs (cfg(windows)), mock.rs (feature "mock")
+crates/efre-authn/      Authenticator trait; authdata.rs, attestation.rs + roots/ (pinned Yubico CAs);
+                        clientdata.rs, hresult.rs; windows/ (cfg(windows) WebAuthn driver);
+                        presence.rs + presence_windows.rs; mock.rs (feature "mock")
+crates/efre-core/examples/hardware_check.rs   Windows hardware test tool (phase 3)
 src-tauri/              Tauri app (crate "efre")
 src/                    React frontend
-docs/                   SPEC.md, ARCHITECTURE.md
+docs/                   SPEC.md, ARCHITECTURE.md, HARDWARE_TESTS.md
 deny.toml               cargo-deny policy
 .github/workflows/ci.yml
 ```
