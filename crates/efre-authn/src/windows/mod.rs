@@ -341,10 +341,11 @@ impl Authenticator for WindowsAuthenticator {
             "missing attestation statement",
         ))?;
         let auth = authdata::parse(parsed.auth_data)?;
-        authdata::check_registration(&auth, credential_id.as_bytes())?;
         let attested = auth.attested.as_ref().ok_or(AuthnError::InvalidResponse(
             "missing attested credential data",
         ))?;
+        // First prove it is a genuine YubiKey, then check what Windows asked it to
+        // create: a non-YubiKey must be reported as such, not as "update Windows".
         attestation::verify_packed(
             statement,
             parsed.auth_data,
@@ -352,6 +353,7 @@ impl Authenticator for WindowsAuthenticator {
             &attested.aaguid,
             now_unix(),
         )?;
+        authdata::check_registration(&auth, credential_id.as_bytes())?;
         Ok(Enrollment {
             credential_id,
             aaguid: Aaguid(attested.aaguid),
