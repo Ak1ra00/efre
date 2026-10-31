@@ -18,8 +18,13 @@ sha2.workspace = true
 zeroize.workspace = true
 minicbor.workspace = true
 rustls-webpki.workspace = true
+# Certificate/time types for rustls-webpki (already in the graph through it).
+rustls-pki-types = { version = "1.15", default-features = false, features = ["alloc"] }
 thiserror.workspace = true
 hmac = { workspace = true, optional = true }
+
+[dev-dependencies]
+proptest.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = [
