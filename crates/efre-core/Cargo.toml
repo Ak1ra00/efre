@@ -31,5 +31,13 @@ windows = { workspace = true, features = ["Win32_System_Memory"] }
 efre-authn = { workspace = true, features = ["mock"] }
 proptest.workspace = true
 
+[target.'cfg(windows)'.dev-dependencies]
+# examples/hardware_check.rs: parent window for the Windows Security dialog.
+windows = { workspace = true, features = [
+  "Win32_Foundation",
+  "Win32_System_Console",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
 [lints]
 workspace = true
