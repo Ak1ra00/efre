@@ -1,0 +1,16 @@
+# cargo-audit policy. CI runs `cargo audit --deny warnings`.
+#
+# cargo-audit scans every platform in Cargo.lock. The advisories below affect
+# crates that exist ONLY in Tauri's Linux backend (GTK via muda/gtk, D-Bus via
+# zbus in tauri-plugin-single-instance). None of them is part of the Windows
+# build. The CI step "Linux-only advisory crates are absent from the Windows
+# build" fails if any of them ever enters the Windows dependency graph, so these
+# ignores cannot hide a problem in the shipped app.
+[advisories]
+ignore = [
+  "RUSTSEC-2024-0370", # proc-macro-error unmaintained (glib-macros, Linux only)
+  "RUSTSEC-2024-0429", # glib VariantStrIter unsound (GTK, Linux only)
+  "RUSTSEC-2026-0370", # zvariant unmaintained (zbus, Linux only)
+  "RUSTSEC-2026-0371", # zbus_names unmaintained (zbus, Linux only)
+  "RUSTSEC-2026-0372", # zvariant_derive unmaintained (zbus, Linux only)
+]

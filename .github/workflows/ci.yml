@@ -108,6 +108,18 @@ jobs:
           tool: cargo-deny@0.20.2,cargo-audit@0.22.2
       - name: cargo deny (bans incl. network crates/plugins, licenses, sources, advisories)
         run: cargo deny --locked check
+      - name: Linux-only advisory crates are absent from the Windows build
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Keep in sync with .cargo/audit.toml.
+          for c in glib proc-macro-error zbus zbus_names zvariant zvariant_derive; do
+            if cargo tree --locked -p efre --target x86_64-pc-windows-msvc -e all --prefix none -i "$c" 2>/dev/null | grep -q .; then
+              echo "::error::$c is in the Windows dependency graph; its audit ignore in .cargo/audit.toml is no longer valid"
+              exit 1
+            fi
+          done
+          echo "OK: ignored advisories only affect Linux-only crates"
       - name: cargo audit
         run: cargo audit --deny warnings
 

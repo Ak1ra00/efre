@@ -676,7 +676,10 @@ See §3.3 for what it doesn't block.
     shows `mock`, or if the binary contains the mock's unique marker string.
 - **CI** (GitHub Actions, `windows-latest`, actions pinned by commit SHA):
   - `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`
-  - `cargo audit` and `cargo deny check`
+  - `cargo audit --deny warnings` and `cargo deny check`. A few advisories
+    for crates that exist only in Tauri's Linux backend (GTK, D-Bus) are
+    ignored in `.cargo/audit.toml`. A CI step fails if any of those crates
+    ever appears in the Windows dependency graph.
   - `tsc --noEmit`, `eslint`, `vitest run`
   - the mock-exclusion check
   - an unsigned `tauri build` (NSIS) uploaded as an artifact
