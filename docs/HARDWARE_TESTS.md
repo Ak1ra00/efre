@@ -6,23 +6,53 @@ The tool works in a throwaway vault under `%TEMP%`. It never touches `%LOCALAPPD
 > requires a FIDO reset, which **wipes every FIDO credential on that key**, including
 > all your passkeys. Use a spare key for that test, or skip it.
 
-## 1. Prerequisites (once)
-- Visual Studio 2022 Build Tools, with the "Desktop development with C++" workload.
-- Rust via rustup (https://rustup.rs). The repo pins the toolchain itself.
-- Node.js 22 LTS and Git.
+## 1. Before you start
 - Both YubiKeys have a FIDO2 PIN. If one doesn't, set it under Settings → Accounts →
   Sign-in options → Security key → Manage, or in Yubico Authenticator.
+- Close any app that might grab the keys (Yubico Authenticator is fine to leave closed).
 
-## 2. Commands (PowerShell)
+## 2. Get and run the tool
+
+### Option A — download it (nothing to install)
+1. Open https://github.com/Ak1ra00/efre/actions, signed in to GitHub, and click the
+   newest **CI** run on branch `phase-3-windows` that has a green tick.
+2. At the bottom, under **Artifacts**, download `efre-hardware-check-…` and unzip it
+   (for example into `Downloads`).
+3. In PowerShell:
+   ```powershell
+   cd $HOME\Downloads\efre-hardware-check-*        # the unzipped folder
+   Unblock-File .\hardware_check.exe              # it came from the internet
+   .\hardware_check.exe
+   ```
+   If Windows SmartScreen still warns ("Windows protected your PC"): **More info →
+   Run anyway**. It is unsigned because code signing comes later (phase 5).
+
+### Option B — build it yourself (needed later for development anyway)
+Once, in PowerShell (Visual Studio Build Tools asks for administrator approval and
+takes a while):
 ```powershell
-git clone https://github.com/Ak1ra00/efre; cd efre      # or: git pull
-git checkout phase-3-windows
-npm ci; npm run build                                   # needed once before cargo test
-cargo test --workspace
-cargo run -p efre-core --example hardware_check         # debug build; do not add --release
+winget install --id Rustlang.Rustup -e
+winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
-Keep the terminal window in front. Each "Press Enter" step tells you which key to
-insert.
+Then **close PowerShell and open a new window** (so `cargo` is on PATH), and:
+```powershell
+cd $HOME
+git clone https://github.com/Ak1ra00/efre     # first time only; later: cd $HOME\efre; git pull
+cd efre
+git checkout phase-3-windows
+rustup toolchain install                      # installs the Rust version the repo pins
+cargo run -p efre-core --example hardware_check   # debug build; do not add --release
+```
+Optional, the full test suite (`npm.cmd` avoids PowerShell's script-execution block on
+`npm`; no policy change needed):
+```powershell
+npm.cmd ci; npm.cmd run build
+cargo test --workspace
+```
+
+Either way: keep the PowerShell window in front. Each "Press Enter" step tells you
+which key to insert. At the end the window stays open: select all the text with the
+mouse (or Ctrl+A in Windows Terminal), copy it, and send it back.
 
 ## 3. What each step should show
 | Step | You do | Expected |

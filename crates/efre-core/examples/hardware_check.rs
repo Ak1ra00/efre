@@ -211,7 +211,7 @@ mod flow {
             "\nSummary: {} passed, {} notes, {} failed.",
             t.pass, t.note, t.fail
         );
-        println!("Copy everything above into the results section of docs/HARDWARE_TESTS.md.");
+        println!("Send everything above back, with the results table from docs/HARDWARE_TESTS.md.");
         i32::from(t.fail > 0)
     }
 
@@ -411,7 +411,14 @@ mod windows_main {
 
 fn main() {
     #[cfg(windows)]
-    std::process::exit(windows_main::main());
+    {
+        let code = windows_main::main();
+        // Keep the window open when the tool was started by double-click.
+        print!("\nDone. Copy the output above if you need it, then press Enter to close... ");
+        let _ = std::io::Write::flush(&mut std::io::stdout());
+        let _ = std::io::stdin().read_line(&mut String::new());
+        std::process::exit(code);
+    }
     #[cfg(not(windows))]
     println!(
         "hardware_check is Windows-only: it drives real YubiKeys through webauthn.dll. \

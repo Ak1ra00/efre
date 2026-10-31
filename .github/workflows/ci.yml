@@ -94,6 +94,31 @@ jobs:
       - run: cargo clippy --locked -p efre-core -p efre-authn --all-targets -- -D warnings
       - run: cargo test --locked --no-fail-fast -p efre-core -p efre-authn
 
+  hardware-check:
+    name: Hardware check tool (hardware_check.exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned Rust toolchain (rust-toolchain.toml)
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: hardware-check-static-crt
+      # Static CRT: the .exe runs on a PC without the Visual C++ runtime installed.
+      # Debug profile on purpose: the example is built with efre-core's dev-dependencies.
+      - name: Build hardware_check.exe
+        env:
+          RUSTFLAGS: -C target-feature=+crt-static
+        run: cargo build --locked -p efre-core --example hardware_check
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: efre-hardware-check-${{ github.sha }}
+          path: target/debug/examples/hardware_check.exe
+          if-no-files-found: error
+          retention-days: 14
+
   supply-chain:
     name: Supply chain (cargo-deny, cargo-audit)
     runs-on: windows-latest
