@@ -1,7 +1,8 @@
 # efre — Architecture
 
-Status: **Phase 1 draft, awaiting crypto-design review.** Nothing in §5 is implemented yet.
-Sections marked **[DECISION]** are open questions listed in §14.
+Status: **Phase 2.** `efre-core` and the mock authenticator implement §5–§7
+exactly. The Windows authenticator (§4) arrives in phase 3, the app (§8–§10) in
+phase 4. Decisions D1–D5 were accepted with their defaults (§14).
 
 Priorities, in order: security, reliability, UX, features (see `docs/SPEC.md`).
 
@@ -63,10 +64,10 @@ compile the mock (§11).
 | # | Adversary | Promise |
 |---|---|---|
 | A1 | Someone with a copy of `vault.efre` (stolen laptop, backup, cloud copy you made yourself) and **no enrolled YubiKey+PIN** | Learns nothing beyond the plaintext header fields (§5.6), the number of records, and each record's size rounded up to 256 bytes. Cannot decrypt anything. |
-| A2 | Someone who can **modify** `vault.efre` offline | Any change to the header, a slot, a ciphertext, a nonce or a record id is detected, and efre refuses to open the vault or that record. Detection of *deleting* or *rolling back* an individual record depends on the proposed manifest MAC (§5.8 **[DECISION]**). **Rolling back the whole file** to an older valid copy cannot be detected. |
+| A2 | Someone who can **modify** `vault.efre` offline | Any change to the header, a slot, a ciphertext, a nonce or a record id is detected, and efre refuses to open the vault or that record. Deleting or rolling back an individual record, or mixing records from two copies, is detected by the manifest MAC (§5.8). **Rolling back the whole file** to an older valid copy cannot be detected. |
 | A3 | Someone who finds or steals **one YubiKey** | Needs the PIN too. The YubiKey locks its PIN after 8 wrong tries, or 3 in a row until it is replugged. After you run "remove lost key", that key opens nothing written afterwards (VMK rotation, §6.5). It **can still open file copies made before the removal.** |
 | A4 | A website or other FIDO relying party | Cannot request efre's credential. The RP ID `efre:` is not a valid web origin (§4.3). credProtect level 3 hides the credential until UV succeeds. |
-| A5 | A walk-up attacker at an **unlocked** PC with the key plugged in | Can read whatever is on screen or revealed, which no software can prevent. Cannot add their own YubiKey, rename or remove keys without a fresh PIN+touch on an enrolled key (§6.3 **[DECISION]**). Auto-lock limits the exposure window. |
+| A5 | A walk-up attacker at an **unlocked** PC with the key plugged in | Can read whatever is on screen or revealed, which no software can prevent. Cannot add their own YubiKey, rename or remove keys without a fresh PIN+touch on an enrolled key (§6.3, D2). Auto-lock limits the exposure window. |
 | A6 | Other software running as you **while efre is locked** | Can copy or tamper with the file (see A1 and A2). Could trick you into approving a Windows Security prompt it opened itself, with your credential id and salt (both public), which yields the KEK. This is inherent to any FIDO-based local vault; the defence is not approving prompts you didn't start. |
 | A7 | Malware running as you **while efre is unlocked**, or any malware with admin/SYSTEM | **Out of scope.** It can read efre's memory, the screen and the clipboard, and inject into the process. efre makes this harder (locked key pages, no secrets in the webview by default, clipboard exclusions, content protection) but cannot stop it. |
 | A8 | Network attacker | Not applicable: efre makes no connections, and CI checks for this (§10). |
@@ -135,7 +136,7 @@ confirmed whether that fixes non-discoverable credentials. efre therefore:
    `"hmac-secret": true` and `"credProtect": 3`. If either is missing, efre
    refuses the enrollment and shows a "this Windows version can't create the
    credential efre needs" screen. It never silently falls back to a
-   discoverable credential. **[DECISION D1]**
+   discoverable credential (D1).
 3. Immediately runs a test GetAssertion with the new credential, which also
    produces the PRF output needed to wrap the VMK (§6.2).
 
@@ -193,7 +194,7 @@ highest version ≤ 7 the runtime supports):
 | `pAllowCredentialList` | The relevant enrolled credentials (all of them for unlock; a single one during rotation), each `WEBAUTHN_CREDENTIAL_EX` with `dwTransports = USB`. Windows Hello and phones are therefore never offered. |
 | `dwAuthenticatorAttachment` | `CROSS_PLATFORM` |
 | `dwUserVerificationRequirement` | `REQUIRED`, the same as at enrollment, so the authenticator always uses `CredRandomWithUV` |
-| `pHmacSecretSaltValues` | `pGlobalHmacSalt = NULL`; `pCredWithHmacSecretSaltList` = one `{credential id → {pbFirst = slot.salt (32 B), pbSecond = NULL}}` entry per allowed credential |
+| `pHmacSecretSaltValues` | `pGlobalHmacSalt = NULL`; `pCredWithHmacSecretSaltList` = one `{credential id → {pbFirst = slot.salt (32 B), pbSecond = NULL}}` entry per allowed credential. During VMK rotation only (§6.5), `pbSecond` is the slot's new salt, so both outputs come from one touch. |
 | `dwFlags` | `WEBAUTHN_AUTHENTICATOR_HMAC_SECRET_VALUES_FLAG` (0x00100000): raw salts, see below |
 | `pCancellationId`, `hWnd` | As for MakeCredential |
 
@@ -274,7 +275,7 @@ SCHEMA_VERSION       = 1        (u16)   record plaintext encoding
 LBL_DATA             = "efre/v1/data"       (12 bytes, ASCII)
 LBL_HEADER           = "efre/v1/header"     (14 bytes)
 LBL_KEK              = "efre/v1/kek"        (11 bytes)
-LBL_MANIFEST         = "efre/v1/manifest"   (16 bytes)  [only if D3 approved]
+LBL_MANIFEST         = "efre/v1/manifest"   (16 bytes)
 PAD_BUCKET           = 256
 ```
 
@@ -294,7 +295,7 @@ PAD_BUCKET           = 256
  VMK (32 B, OS CSPRNG; lives only in locked memory while unlocked)
    ├─ data_key       = HKDF-SHA256( salt = ∅, ikm = VMK, info = LBL_DATA,     L = 32 )
    ├─ header_mac_key = HKDF-SHA256( salt = ∅, ikm = VMK, info = LBL_HEADER,   L = 32 )
-   └─ manifest_key   = HKDF-SHA256( salt = ∅, ikm = VMK, info = LBL_MANIFEST, L = 32 )  [D3]
+   └─ manifest_key   = HKDF-SHA256( salt = ∅, ikm = VMK, info = LBL_MANIFEST, L = 32 )
 ```
 `salt = ∅` means HKDF's default, HashLen zero bytes (RFC 5869 §2.2). The VMK
 is already uniform, so the salt has no security role there.
@@ -366,10 +367,11 @@ vault id, and the number of slots. For each slot it shows the nickname,
 enrolled date, AAGUID (which reveals the YubiKey model), credential id and salt.
 It also shows the number of records, each record's padded size, and SQLite
 page-level metadata. The unlock screen displays nicknames *before* the MAC is
-verified, so they are rendered as plain, length-limited text. **[DECISION D5]**
+verified, so they are rendered as plain, length-limited text (D5).
 
 ### 5.7 Unlock (verification order)
-1. Open the SQLite file and run the integrity checks in §7. Read `header.body` and `header.mac`.
+1. Open the SQLite file and run the integrity checks in §7. Read `header.body`,
+   `header.mac` and `header.manifest_mac`.
 2. Parse the header strictly. Refuse if `format_version < MIN_FORMAT_VERSION`
    (downgrade) or `> FORMAT_VERSION` ("made by a newer efre").
 3. GetAssertion over all slots (§4.6). The result is `(cred_id, PRF)`, and efre
@@ -380,7 +382,7 @@ verified, so they are rendered as plain, length-limited text. **[DECISION D5]**
 5. Derive `header_mac_key` and **verify `header.mac` in constant time,
    immediately**. On mismatch, zeroize the VMK and refuse: "the vault file was
    modified".
-6. If D3 is approved, verify the manifest MAC (§5.8).
+6. Verify the manifest MAC over all records (§5.8), in constant time.
 7. Derive `data_key`, decrypt every record, and build the in-memory metadata index (§8.2).
 
 Why a downgrade fails closed: `format_version` is bound into every slot's AAD
@@ -389,11 +391,11 @@ and a version below `MIN_FORMAT_VERSION` is refused before any key is used.
 `schema_version` is likewise MACed in the header and bound into every record's
 AAD.
 
-### 5.8 Manifest MAC: proposed addition, not in the brief **[DECISION D3]**
+### 5.8 Manifest MAC (D3: beyond the brief, accepted)
 Without it, an attacker with write access can **delete** a record, **revert a
 single record** to an older ciphertext with the same id (for example an old
 password), or **mix records** from two copies of the vault. Each of those
-records still decrypts. Proposal:
+records still decrypts. Construction:
 ```
 manifest = LBL_MANIFEST || u16(FORMAT_VERSION) || vault_id || u32(record_count)
            || for each record, sorted by record_id:  record_id || SHA-256(nonce || ciphertext)
@@ -414,6 +416,50 @@ undetectable".
 - Secret types are `Secret*` or `Zeroizing`. Their `Debug` impls are redacted,
   they don't implement `Display` or `Serialize`, and errors never carry key or
   plaintext bytes.
+- Record payloads are encoded straight into one exactly-sized buffer that is
+  encrypted in place, and decrypted in place into a zeroizing buffer, so no
+  reallocation leaves a plaintext copy behind. Every vault string is a `Text`
+  (zeroized on drop, redacted `Debug`). Revealed values leave `efre-core` as
+  `secrecy::SecretString`.
+
+### 5.10 Record payload, schema v1
+Payloads are CBOR maps with integer keys (`minicbor`). Unknown keys are ignored,
+so later schemas can add fields. Trailing bytes after the map are rejected.
+
+**Item** (every record except the settings record):
+
+| Key | Field | Type |
+|---|---|---|
+| 0 | `kind` | 0 Login, 1 Secure Note, 2 Card, 3 Identity, 4 Custom |
+| 1 | `title` | text, 1–256 characters, single line |
+| 2 | `favorite` | bool |
+| 3 | `tags` | array of text (≤ 32 tags, each 1–48 characters, unique) |
+| 4 | `created_at` | int, Unix seconds |
+| 5 | `updated_at` | int, ≥ `created_at` |
+| 6 | `trashed_at` | int, absent unless the item is in the trash |
+| 7 | `fields` | array of Field (≤ 128) |
+| 8 | `next_field_id` | uint; field ids are never reused |
+
+**Field:**
+
+| Key | Field | Type |
+|---|---|---|
+| 0 | `id` | uint, 1 ≤ id < `next_field_id`, unique in the item |
+| 1 | `label` | text, ≤ 64 characters |
+| 2 | `kind` | 0 Text, 1 **Hidden** (secret), 2 URL, 3 Email, 4 Phone, 5 Date, 6 Multiline |
+| 3 | `role` | absent, or 0 Username, 1 Password (must be Hidden), 2 URL, 3 Notes; each role at most once per item |
+| 4 | `value` | text, ≤ 256 KiB |
+
+The item types are field templates the UI fills in. For example, a Card is a
+Text "Cardholder", a Hidden "Number", a Text "Expiry", and Hidden "CVV" and
+"PIN" fields. The Username role is the list subtitle and Ctrl+B. The Password
+role is Ctrl+C. The Notes role holds a secure note's Markdown body.
+
+**Settings** (the record with the reserved id of 16 zero bytes):
+`{0: auto_lock_minutes (1–120, default 5), 1: clipboard_clear_seconds (5–300, default 30)}`.
+
+The limits keep every payload well under the 1 MiB record cap. Any record that
+decrypts but fails decoding or validation makes the vault refuse to open.
 
 ## 6. Operations
 
@@ -429,9 +475,11 @@ undetectable".
    - "Add backup later" is allowed only after an explicit warning dialog. The
      vault then has one slot, and a persistent banner stays until a second
      slot exists.
-4. Write the file atomically: create `vault.efre.tmp`, write the header, MAC,
-   empty settings record and manifest in one transaction, then close and
-   `MoveFileExW(…, MOVEFILE_WRITE_THROUGH)` it to `vault.efre`.
+4. Write the file atomically.
+   - Build `vault.efre.tmp` with the header, MAC, settings record and manifest
+     in one transaction, then close it and flush it to disk.
+   - **Hard-link** it to `vault.efre`, which fails if that name already exists,
+     so efre can never overwrite a vault. Then remove the temporary name.
    - Nothing reaches disk before this step. Non-discoverable credentials keep
      no state on the YubiKey, so an aborted wizard leaves nothing behind.
 
@@ -441,13 +489,16 @@ See §5.7. One prompt.
 ### 6.3 Add a key (vault unlocked)
 1. **Fresh proof from an enrolled key** (prompt 1): GetAssertion over the
    enrolled slots, re-derive the VMK, and check that it equals the in-memory
-   VMK in constant time. **[DECISION D2]** The brief only requires the new
-   key's PIN+touch. This step stops someone at your unlocked PC from enrolling
+   VMK in constant time. This goes beyond the brief, which only requires the
+   new key's PIN+touch (D2). It stops someone at your unlocked PC from enrolling
    their own key.
 2. New key: MakeCredential (prompt 2), then GetAssertion (prompt 3). Wrap the
    VMK for a new slot.
-3. In one transaction: write the new header and a new MAC, plus the manifest if
-   D3 is approved.
+3. In one transaction: write the new header and its MAC. Records and the
+   manifest are unchanged.
+
+The UI is told what to say before each prompt (`KeyStep`): "use an enrolled
+key", "insert the new key", "touch the new key again".
 
 ### 6.4 Rename a key
 A fresh assertion from any enrolled key (1 prompt), then update the header and MAC in one transaction.
@@ -457,19 +508,22 @@ Requires at least 2 slots. efre shows a confirmation that says plainly: "Copies
 of `vault.efre` made before now can still be opened with the removed key.
 Delete them and make a fresh copy afterwards."
 1. Generate `VMK′`, and for each remaining slot j a new `salt′_j` and `wrap_nonce′_j`.
-2. For each remaining slot, one at a time: GetAssertion with
-   `allow = [cred_j]` and `salt′_j` (one prompt per remaining key), then
-   `KEK′_j` and `wrapped_vmk′_j`.
+2. For each remaining slot, one at a time, run one GetAssertion (one prompt per
+   remaining key). It uses `allow = [cred_j]`, with the current `salt_j` as the
+   first salt and `salt′_j` as the second, both evaluated in the same touch.
+   - The first output must unwrap slot j to the open VMK (constant-time
+     compare). This proves that key still opens this vault. Otherwise abort.
+   - The second output gives `KEK′_j` and `wrapped_vmk′_j`.
    - If you cancel at any point, nothing is written.
 3. One transaction:
    - decrypt every record with the old `data_key`, and re-encrypt it with
      `data_key′` under a fresh nonce and the same `record_id`;
    - write the new header (without the removed slot), its MAC under
      `header_mac_key′`, and the manifest.
-4. After the commit: `PRAGMA wal_checkpoint(TRUNCATE)` and `VACUUM`, so freed
-   pages holding old ciphertext or old slots are overwritten (`secure_delete`)
-   and dropped from the WAL. Then the in-memory keys are swapped and the old
-   ones zeroized.
+4. After the commit, the in-memory keys are swapped and the old ones zeroized.
+   The commit already truncated the WAL, and `secure_delete` already zeroed the
+   freed pages. `VACUUM` then rewrites the file as defence in depth; if it
+   fails, the committed rotation stands.
 5. If only one slot remains, the "add a backup key" banner returns.
 
 The remaining slots' salts are rotated as well, which costs nothing because
@@ -499,6 +553,11 @@ efre locks immediately if no YubiKey is present.
   holds no vault data).
 - SQLite comes from `rusqlite` with the `bundled` feature, so the SQLite
   version is pinned rather than whatever the system ships.
+- Connection hardening, applied before anything reads the file:
+  - opened with `SQLITE_OPEN_NOFOLLOW`, so symlinks are refused;
+  - `SQLITE_DBCONFIG_DEFENSIVE` on;
+  - triggers, views, trusted schema and `ATTACH`-create off;
+  - no extension loading.
 - Pragmas on every open:
   - `journal_mode=WAL`
   - `synchronous=FULL`
@@ -513,8 +572,8 @@ efre locks immediately if no YubiKey is present.
 - Schema (exactly this; anything else in `sqlite_schema` means refuse to open):
   ```sql
   CREATE TABLE header  (id INTEGER PRIMARY KEY CHECK (id = 1),
-                        body BLOB NOT NULL, mac BLOB NOT NULL CHECK (length(mac) = 32)
-                        /* , manifest_mac BLOB NOT NULL CHECK (length(manifest_mac) = 32)  [D3] */);
+                        body BLOB NOT NULL, mac BLOB NOT NULL CHECK (length(mac) = 32),
+                        manifest_mac BLOB NOT NULL CHECK (length(manifest_mac) = 32));
   CREATE TABLE records (id BLOB PRIMARY KEY CHECK (length(id) = 16),
                         nonce BLOB NOT NULL CHECK (length(nonce) = 24),
                         ciphertext BLOB NOT NULL CHECK (length(ciphertext) >= 272)) WITHOUT ROWID;
@@ -523,7 +582,8 @@ efre locks immediately if no YubiKey is present.
   16-byte tag.
 - On open: `PRAGMA integrity_check` must return `ok`; `application_id`,
   `user_version` and the schema SQL must match exactly; there must be exactly
-  one header row.
+  one header row. Records shorter than 272 bytes are refused even if a `CHECK`
+  constraint was bypassed.
 - Writes: every change is one `BEGIN IMMEDIATE … COMMIT`, followed by
   `wal_checkpoint(TRUNCATE)`, so `vault.efre` alone is a complete, consistent
   copy whenever the app is idle. "Open vault folder" and quit also checkpoint.
@@ -563,6 +623,8 @@ efre locks immediately if no YubiKey is present.
 - When you type or edit a secret, it necessarily exists in the webview's input
   until you save. That is the only other path. Generated passwords are created
   in Rust and inserted into the edit form.
+- Editing never sends existing secrets to the webview: a field you didn't
+  change is saved as `DraftValue::Keep`, and Rust keeps the stored value.
 - IPC payloads are small typed structs. Rust validates every id and length.
   Commands that need an unlocked vault fail with `Locked` otherwise.
 - Nothing is stored in `localStorage`, `sessionStorage`, IndexedDB or cookies.
@@ -686,15 +748,40 @@ See §3.3 for what it doesn't block.
 
   An extra `ubuntu-latest` job runs the `efre-core` and `efre-authn` tests to
   prove they are platform-independent.
-- **Tests (phase 2):**
-  - every crypto path, including round-trips, wrong key, and each tampered
-    field (ciphertext, nonce, AAD inputs, header bytes, MAC, slot fields, slot
-    swap, cross-vault slot) failing closed;
-  - downgrade and future-version rejection;
-  - slot add/remove and rotation, including cancellation part-way through;
-  - padding edge cases;
-  - proptest round-trips for the header and payload encodings, plus a proptest
-    that random corruption of the header or a record never opens.
+- **Tests (phase 2):** `cargo test -p efre-core -p efre-authn`.
+  - **Unit tests:**
+    - KEK and subkeys checked against an independent HKDF computation;
+    - every AEAD binding (key, vault id, slot or record id, version, each
+      nonce and ciphertext byte) failing closed;
+    - padding edges;
+    - header byte layout and strictness;
+    - payload validation;
+    - redacted `Debug`.
+  - **`tests/vault_flows.rs`:**
+    - wizard, unlock with either key, and every unlock outcome (no key,
+      unknown key, cancel, timeout, wrong PIN, PIN blocked → backup key);
+    - secrets withheld until revealed;
+    - item lifecycle;
+    - settings;
+    - add key (D2, including a walk-up attacker's own key);
+    - rename;
+    - remove with VMK rotation, including a cancellation part-way through
+      that leaves the file byte-identical;
+    - last-key protection.
+  - **`tests/tamper.rs`:** each of these fails closed:
+    - every header byte;
+    - the header and manifest MACs;
+    - downgrade and future versions, refused before any prompt;
+    - ciphertext, tag and nonce edits, deletion, swap, extension and truncation;
+    - single-record rollback;
+    - records, headers and slots from another vault;
+    - extra tables, indexes or views, a foreign `application_id`, damaged
+      pages, and non-SQLite files.
+  - **Property tests:**
+    - header and payload round-trips, and decoders that never panic;
+    - any single bit flip in a record fails;
+    - any bit flipped anywhere in the file either makes efre refuse it or
+      leaves the contents unchanged.
 
 ## 12. Dependencies and why
 
@@ -722,7 +809,7 @@ published.
 | `tauri-build` | 2.x | app (build) | Required by Tauri |
 | `tauri-plugin-single-instance` | 2.5 | app | Single instance. It uses local IPC only, no network. |
 | `serde`, `serde_json` | 1 | app | IPC payloads (already required by Tauri) |
-| `proptest` | 1.12 | dev | Property tests |
+| `proptest` | 1.12 | dev | Property tests. Temporary directories in tests use a small std-only helper rather than another crate. |
 
 ### Frontend (bundled locally; no CDN)
 | Package | Why |
@@ -755,8 +842,8 @@ deny.toml               cargo-deny policy
 .github/workflows/ci.yml
 ```
 
-## 14. Decisions for review
-| # | Question | Default if you don't choose |
+## 14. Decisions (accepted 2026-10-31: all defaults)
+| # | Question | Decision |
 |---|---|---|
 | D1 | If your Windows build drops hmac-secret on non-discoverable credentials, should efre refuse to enroll, or fall back to a **discoverable** credential (one passkey slot per key)? | **Refuse** and show "update Windows". |
 | D2 | Should adding a key also require a fresh PIN+touch on an already-enrolled key (one more prompt)? | **Yes** |

@@ -22,6 +22,10 @@ rusqlite.workspace = true
 minicbor.workspace = true
 thiserror.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+# VirtualLock / VirtualUnlock for the key page (ARCHITECTURE §5.9).
+windows = { workspace = true, features = ["Win32_System_Memory"] }
+
 [dev-dependencies]
 # The mock authenticator is only ever compiled for tests (see ARCHITECTURE §11).
 efre-authn = { workspace = true, features = ["mock"] }
