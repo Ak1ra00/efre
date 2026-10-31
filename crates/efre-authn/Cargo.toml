@@ -22,6 +22,8 @@ thiserror.workspace = true
 hmac = { workspace = true, optional = true }
 
 [target.'cfg(windows)'.dependencies]
+# OS CSPRNG for WebAuthn challenges.
+rand.workspace = true
 windows = { workspace = true, features = [
   "Win32_Foundation",
   "Win32_Networking_WindowsWebServices",

@@ -12,6 +12,8 @@
 //!
 //! See `docs/ARCHITECTURE.md` §4 for the exact WebAuthn parameters.
 
+pub mod clientdata;
+pub mod hresult;
 mod types;
 
 pub use types::{
