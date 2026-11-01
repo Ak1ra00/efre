@@ -697,6 +697,10 @@ efre locks immediately if no YubiKey is present.
 | YubiKey unplugged | `CM_Register_Notification` on `GUID_DEVINTERFACE_HID` (`efre_authn::presence_windows::PresenceWatcher`). Each arrival or removal re-enumerates present HID interfaces (`CM_Get_Device_Interface_List`) and looks for `VID_1050` as a whole token of the hardware id. efre locks when none remain (see §6.7). Only changes are reported, and a failed enumeration counts as "no YubiKey". No device is opened, so no admin is needed. |
 | Ctrl+L / quit | Direct |
 
+If the unplug watcher or the sleep/session watcher cannot start on a given PC, efre
+keeps running, and Settings › Security lists that trigger as unavailable. Phase 5
+revisits whether a missing trigger should stop efre instead.
+
 ### 8.6 Screenshot blocking
 Every window is `contentProtected: true`, which maps to
 `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)`. This includes the wizard and
@@ -732,8 +736,13 @@ See §3.3 for what it doesn't block.
   - native decorations with `theme: "Dark"` (a DWM dark title bar), which keeps
     snap layouts;
   - `contentProtected: true`;
-  - `incognito: true`.
-  - A Mica backdrop is optional and decided in phase 4.
+  - `incognito: true`;
+  - a dark window and webview background (#0e0f11), so there is no white flash;
+  - WebView2's browser accelerator keys (Print, Save as, Find, reload) and its
+    default context menu are switched off through the WebView2 settings object.
+    Print or Save as would otherwise write plaintext to disk. Copy and paste
+    still work in text fields.
+  - A Mica backdrop is optional and decided in phase 5.
 - **Installer:** NSIS with `installMode: currentUser`, so no admin.
   `webviewInstallMode: skip`, because WebView2 ships with Windows 11 and the
   bootstrapper would download. The installer is unsigned for now.
@@ -870,6 +879,7 @@ published.
 | `tauri` | 2.12 | app | App shell, without the devtools feature |
 | `tauri-build` | 2.x | app (build) | Required by Tauri |
 | `tauri-plugin-single-instance` | 2.5 | app | Single instance. It uses local IPC only, no network. |
+| `webview2-com` | 0.39 | app (Windows) | The two WebView2 settings Tauri doesn't expose: browser accelerator keys and the default context menu. Already in the graph through tauri/wry at the same version. |
 | `serde`, `serde_json` | 1 | app | IPC payloads (already required by Tauri) |
 | `proptest` | 1.12 | dev | Property tests. Temporary directories in tests use a small std-only helper rather than another crate. |
 
@@ -886,11 +896,12 @@ published.
 | `lucide-react` | Icons, as tree-shaken SVG components |
 | `@fontsource-variable/inter` | Bundled Inter variable font |
 | `@tanstack/react-virtual` | Virtualized item list |
+| `react-markdown` 10 | Secure-note Markdown. It renders React elements, never `innerHTML`; raw HTML is skipped, images aren't rendered, and links are plain text. |
 | `@tauri-apps/api` | IPC |
 | dev: `@tauri-apps/cli`, `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `jsdom`, `eslint`, `typescript-eslint`, `eslint-plugin-react-hooks`, `globals` | Build, test and lint |
 
-A Markdown renderer for secure notes, raw HTML off and images disabled, is
-chosen and justified in phase 4.
+All frontend dependencies are pinned to exact versions. `npm audit --omit=dev` runs in
+CI. None of them injects `<style>` tags or uses `eval`, as the strict CSP requires.
 
 ## 13. Repository layout
 ```

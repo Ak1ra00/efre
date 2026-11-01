@@ -98,7 +98,7 @@ command needs; outside it, the command fails with `locked` or `invalid`.
 | `setup_enroll_key` | `{ nickname }` | `KeyInfo` | setup (after start) | 2 (`createCredential`, `confirmNewKey`) |
 | `setup_finish` | — | `AppStatus` (unlocked) | setup, ≥ 1 key | 0 |
 | `setup_cancel` | — | `AppStatus` | setup | 0 |
-| `unlock` | — | `AppStatus` | locked | 1 |
+| `unlock` | — | `AppStatus` | locked | 1 (`useEnrolledKey`) |
 | `lock` | — | `null` (then the webview reloads) | any | 0 |
 | `cancel_prompt` | — | `null` | any | 0 (closes an open Windows prompt) |
 | `activity` | — | `null` | any | 0 (resets the idle timer) |
@@ -129,6 +129,18 @@ command needs; outside it, the command fails with `locked` or `invalid`.
 During `setup_enroll_key`, `add_key` and `remove_key` the "no YubiKey plugged in" lock
 is suspended, so the user can swap keys (ARCHITECTURE §6.7). Every other lock trigger
 stays active and cancels the prompt.
+
+Behaviour that follows from the implementation:
+- **Idle timer:** every command resets it, `activity` included. The UI must not poll
+  in the background, or it would keep the vault open.
+- **Stale commands:** a command that started before a lock fails with `locked`, even if
+  the vault was unlocked again in the meantime.
+- **During setup** there is no vault yet:
+  - idle, suspend, session events and `lock` discard the wizard, including the master
+    key it holds in memory, and setup starts over;
+  - unplugging a key does not, so keys can be swapped between enrollments;
+  - `setup_start` always begins a fresh wizard. The UI shows progress from
+    `setupKeys`.
 
 ## Events (Rust → webview)
 | Event | Payload | When |
