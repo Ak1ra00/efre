@@ -4,7 +4,7 @@
  * shared KeyPromptOverlay says which key and what Windows asks for. After any change the
  * app status is refreshed, so the single-key banner appears or goes away.
  */
-import { Pencil, Plus, Trash2, TriangleAlert, Usb } from "lucide-react";
+import { Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 
 import { useAppStatus, useStatus } from "@/app/app-status";
@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { KeyErrorAlert, type KeyErrorCopy, keyErrorCopy } from "@/unlock/key-errors";
 import { KeyPromptOverlay, type PromptRow, keyRows, sequentialRows, useKeyPrompt } from "@/unlock/key-prompt";
 import { nicknameError, uniqueNickname } from "@/unlock/nickname";
+import { SecurityKeyIcon } from "@/unlock/SecurityKeyIcon";
 
 import { SectionHeader } from "./section";
 
@@ -302,7 +303,7 @@ function overlayProps(flow: Flow): {
 function KeyBadge() {
   return (
     <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line-strong bg-elevated text-fg-subtle">
-      <Usb aria-hidden="true" className="size-4" />
+      <SecurityKeyIcon />
     </span>
   );
 }

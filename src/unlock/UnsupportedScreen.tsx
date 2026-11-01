@@ -3,7 +3,7 @@
  * features efre needs (SPEC §3: a clear "update Windows" screen), but the backend also
  * reports other blocking problems here, such as a vault file it can't open.
  */
-import { Check, FolderOpen, HardDrive, Monitor, RotateCw, Usb } from "lucide-react";
+import { Check, FolderOpen, HardDrive, Monitor, RotateCw } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
 import { useAppStatus, useStatus } from "@/app/app-status";
@@ -12,6 +12,8 @@ import { EfreMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { ipc } from "@/lib/ipc";
 import type { AppStatus } from "@/lib/ipc-types";
+
+import { SecurityKeyIcon } from "./SecurityKeyIcon";
 
 /** The oldest WebAuthn API with per-credential hmac-secret salts (ARCHITECTURE §4.4). */
 const MIN_API_VERSION = 4;
@@ -114,7 +116,7 @@ function WindowsNeeds({ apiVersion }: { apiVersion: number | null }) {
         >
           It lets efre ask your YubiKey for its secret (hmac-secret). {thisPc}.
         </Need>
-        <Need icon={<Usb aria-hidden="true" className="size-4" />} title="A YubiKey with FIDO2, on USB">
+        <Need icon={<SecurityKeyIcon />} title="A YubiKey with FIDO2, on USB">
           With a FIDO2 PIN (or fingerprint on a YubiKey Bio). efre never needs admin rights.
         </Need>
       </ul>

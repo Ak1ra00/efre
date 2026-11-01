@@ -20,6 +20,8 @@ import type { KeyStep } from "@/lib/ipc-types";
 import { useIpcEvent } from "@/lib/use-ipc-event";
 import { cn } from "@/lib/utils";
 
+import { SecurityKeyIcon } from "./SecurityKeyIcon";
+
 /** How a prompting command ended. */
 export type KeyPromptResult<T> =
   | { ok: true; value: T }
@@ -165,17 +167,17 @@ interface KeyPromptOverlayProps {
 
 const listFormat = new Intl.ListFormat("en", { type: "disjunction" });
 
-/** One line of extra guidance for a step, on top of describeKeyStep. */
-function stepHint(step: KeyStep, enrolledKeys: readonly string[]): string | null {
+/** One line of extra guidance for a step, on top of describeKeyStep (null: nothing to add). */
+export function stepHint(step: KeyStep, enrolledKeys: readonly string[]): string | null {
   switch (step.step) {
     case "useEnrolledKey":
-      return enrolledKeys.length > 0 ? `Any enrolled key works: ${listFormat.format(enrolledKeys)}.` : null;
+      return enrolledKeys.length > 0 ? `Use ${listFormat.format(enrolledKeys)}.` : null;
     case "createCredential":
-      return "Plug in the key you're adding. Windows may first ask you to touch it.";
+      return "Plug in the key you're adding.";
     case "confirmNewKey":
       return "Same key again: keep it plugged in.";
     case "useKey":
-      return `Plug in “${step.nickname}” if it isn't already.`;
+      return null;
   }
 }
 
@@ -198,10 +200,10 @@ export function KeyPromptOverlay({ prompt, total, rows, enrolledKeys = [], note 
     <Dialog open={prompt.active}>
       <DialogContent
         ref={contentRef}
-        size="sm"
+        size="md"
         showClose={false}
-        // Upper third: the Windows Security dialog opens centred over efre's window.
-        className="top-[8%] translate-y-0 sm:top-[12%]"
+        // Upper part of the window: Windows centres its Security dialog over efre's window.
+        className="top-[6%] max-w-md translate-y-0 sm:top-[10%]"
         onOpenAutoFocus={(event) => {
           // Focus the panel, not Cancel, so a repeated Enter can't cancel by accident.
           event.preventDefault();
@@ -218,7 +220,7 @@ export function KeyPromptOverlay({ prompt, total, rows, enrolledKeys = [], note 
           event.preventDefault();
         }}
       >
-        <div className="flex flex-col gap-4 px-6 pt-6 pb-5">
+        <div className="flex flex-col gap-5 px-6 pt-6 pb-5">
           <div className="flex items-center gap-3">
             <PromptGlyph />
             <p className="text-xs font-medium tracking-wide text-fg-subtle uppercase">
@@ -233,16 +235,10 @@ export function KeyPromptOverlay({ prompt, total, rows, enrolledKeys = [], note 
           </div>
 
           <div className="flex flex-col gap-1.5" aria-live="polite">
-            <DialogTitle>{copy.title}</DialogTitle>
+            <DialogTitle className="text-lg leading-7">{copy.title}</DialogTitle>
             <DialogDescription>{copy.description}</DialogDescription>
-            {hint === null ? null : <p className="text-sm text-fg-muted">{hint}</p>}
+            {hint === null ? null : <p className="text-sm font-medium text-fg">{hint}</p>}
           </div>
-
-          <PinThenTouch />
-
-          {note === undefined ? null : (
-            <div className="rounded-lg border border-line bg-surface px-3 py-2.5 text-[13px] text-fg-muted">{note}</div>
-          )}
 
           {progress.length === 0 ? null : (
             <ol aria-label="Progress" className="flex flex-col gap-1">
@@ -264,9 +260,11 @@ export function KeyPromptOverlay({ prompt, total, rows, enrolledKeys = [], note 
               ))}
             </ol>
           )}
+
+          {note === undefined ? null : <p className="text-[13px] text-fg-subtle">{note}</p>}
         </div>
         <div className="flex items-center justify-between gap-4 border-t border-line px-6 py-3">
-          <p className="text-[13px] text-fg-subtle">Follow the Windows Security window.</p>
+          <PinThenTouch />
           <Button loading={prompt.cancelling} onClick={prompt.cancel}>
             {prompt.cancelling ? "Cancelling…" : "Cancel"}
           </Button>
@@ -301,23 +299,18 @@ function RowMarker({ state, index }: { state: PromptRow["state"]; index: number 
   );
 }
 
-/** "PIN or fingerprint → touch": what every Windows Security prompt asks for. */
+/** "PIN or fingerprint, then touch": what every Windows Security prompt asks for. */
 function PinThenTouch() {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-[13px] text-fg-muted">
-      <span className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface px-2">
-        <RectangleEllipsis aria-hidden="true" className="size-3.5 text-fg-subtle" />
-        PIN
-        <span className="text-fg-subtle">or</span>
-        <FingerprintPattern aria-hidden="true" className="size-3.5 text-fg-subtle" />
-        fingerprint
-      </span>
-      <ArrowRight aria-hidden="true" className="size-3.5 text-fg-subtle" />
-      <span className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface px-2">
-        <Hand aria-hidden="true" className="size-3.5 text-fg-subtle" />
-        Touch the key when it blinks
-      </span>
-    </div>
+    <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-fg-subtle">
+      <RectangleEllipsis aria-hidden="true" className="size-3.5" />
+      <span>PIN or</span>
+      <FingerprintPattern aria-hidden="true" className="size-3.5" />
+      <span>fingerprint,</span>
+      <ArrowRight aria-hidden="true" className="size-3" />
+      <Hand aria-hidden="true" className="size-3.5" />
+      <span>then touch</span>
+    </p>
   );
 }
 
@@ -335,11 +328,7 @@ function PromptGlyph() {
           transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
         />
       )}
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="none">
-        <rect x="3" y="7.5" width="14" height="9" rx="3" stroke="currentColor" className="text-fg-muted" strokeWidth="1.5" />
-        <path d="M17 10.5h3a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-3" stroke="currentColor" className="text-fg-subtle" strokeWidth="1.5" />
-        <circle cx="9" cy="12" r="2" fill="currentColor" className="text-accent" />
-      </svg>
+      <SecurityKeyIcon className="size-5 text-accent-text" />
     </span>
   );
 }

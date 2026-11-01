@@ -3,6 +3,8 @@
  * globally while unlocked; opened with "?" via useUIState().shortcutsOpen. The core
  * shortcuts are always listed; any other shortcut a feature registers is added below.
  */
+import { useRef } from "react";
+
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { KbdCombo } from "@/components/ui/kbd";
 import { formatShortcut } from "@/lib/shortcut";
@@ -48,10 +50,19 @@ export function ShortcutSheet() {
     if (!coreCombos.has(key) && !extra.has(key)) extra.set(key, { combo: command.shortcut, title: command.title });
   }
   const groups = extra.size === 0 ? CORE : [...CORE, { heading: "More", rows: [...extra.values()] }];
+  const contentRef = useRef<HTMLDivElement>(null);
 
   return (
     <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
-      <DialogContent size="sm">
+      <DialogContent
+        ref={contentRef}
+        size="sm"
+        onOpenAutoFocus={(event) => {
+          // Nothing to operate in the sheet but Close: focus the sheet itself.
+          event.preventDefault();
+          contentRef.current?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>efre works without a mouse. Ctrl+K finds everything else.</DialogDescription>

@@ -69,8 +69,8 @@ export function SecuritySection() {
 function Details({ info }: { info: SecurityInfo }) {
   const facts: [string, string][] = [
     ["efre", info.appVersion],
-    ["Vault format", `Version ${String(info.formatVersion)}`],
-    ["Windows security key API", info.webauthnApiVersion === null ? "Not available" : `Version ${String(info.webauthnApiVersion)}`],
+    ["Vault format", `v${String(info.formatVersion)}`],
+    ["WebAuthn API", info.webauthnApiVersion === null ? "Not available" : `v${String(info.webauthnApiVersion)}`],
     ["Enrolled keys", String(info.keyCount)],
   ];
   return (

@@ -18,7 +18,8 @@ export function SectionHeader({
         <h2 className="text-base leading-6 font-semibold tracking-tight">{title}</h2>
         <p className="text-sm text-fg-muted text-pretty">{description}</p>
       </div>
-      {action === undefined ? null : <div className="flex shrink-0 gap-2">{action}</div>}
+      {/* Clear of the dialog's close button (top right) on wide windows. */}
+      {action === undefined ? null : <div className="flex shrink-0 gap-2 sm:mr-9">{action}</div>}
     </div>
   );
 }

@@ -7,7 +7,6 @@ import {
   KeyRound,
   KeySquare,
   type LucideIcon,
-  Usb,
   WifiOff,
 } from "lucide-react";
 import { type ReactNode, type RefObject, useId, useState } from "react";
@@ -22,6 +21,7 @@ import { ITEM_LIMITS } from "@/lib/items";
 import { cn } from "@/lib/utils";
 import { KeyErrorAlert, type KeyErrorCopy } from "@/unlock/key-errors";
 import { nicknameError } from "@/unlock/nickname";
+import { SecurityKeyIcon } from "@/unlock/SecurityKeyIcon";
 import { useEnterKey } from "@/unlock/use-enter-key";
 
 type HeadingRef = RefObject<HTMLHeadingElement | null>;
@@ -100,7 +100,7 @@ export function WelcomeStep({
       <div className="rounded-xl border border-line bg-surface p-5 text-left shadow-highlight">
         <p className="text-sm font-medium">You'll need</p>
         <ul className="mt-3 flex flex-col gap-2.5 text-sm text-fg-muted">
-          <Need icon={Usb}>
+          <Need icon={SecurityKeyIcon}>
             <span className="text-fg">Two YubiKeys</span> with FIDO2: one for every day, one as your backup
           </Need>
           <Need icon={KeyRound}>
@@ -113,7 +113,7 @@ export function WelcomeStep({
   );
 }
 
-function Need({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+function Need({ icon: Icon, children }: { icon: LucideIcon | typeof SecurityKeyIcon; children: ReactNode }) {
   return (
     <li className="flex items-start gap-3">
       <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-accent-text" />
@@ -401,7 +401,7 @@ export function DoneStep({ headingRef, keys, skippedBackup, error, busy, onFinis
         {keys.map((key) => (
           <li key={key.id} className="flex items-center gap-3 px-4 py-3">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line-strong bg-elevated text-fg-subtle">
-              <Usb aria-hidden="true" className="size-4" />
+              <SecurityKeyIcon />
             </span>
             <span className="min-w-0 flex-1 truncate font-medium">{key.nickname}</span>
             <span className="text-[13px] text-success-text">Enrolled</span>
