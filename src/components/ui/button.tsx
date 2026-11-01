@@ -10,7 +10,8 @@ export const buttonVariants = cva(
   [
     "relative inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap select-none",
     "transition-[background-color,border-color,color,box-shadow] duration-150",
-    "disabled:pointer-events-none disabled:text-fg-disabled aria-busy:cursor-progress",
+    // Disabled looks inert; busy (loading) keeps its colours and shows a spinner.
+    "disabled:pointer-events-none disabled:not-aria-busy:text-fg-disabled",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   ],
   {
@@ -18,15 +19,15 @@ export const buttonVariants = cva(
       variant: {
         /** The one main action of a view. */
         primary:
-          "bg-accent text-accent-fg shadow-soft hover:bg-accent-hover active:bg-accent-active disabled:bg-hover",
+          "bg-accent text-accent-fg shadow-soft hover:bg-accent-hover active:bg-accent-active disabled:not-aria-busy:bg-hover",
         /** Everyday actions. */
         secondary:
-          "border border-line-strong bg-elevated text-fg shadow-highlight hover:border-control hover:bg-hover active:bg-selected disabled:border-line disabled:bg-transparent",
+          "border border-line-strong bg-elevated text-fg shadow-highlight hover:border-control hover:bg-hover active:bg-selected disabled:not-aria-busy:border-line disabled:not-aria-busy:bg-transparent",
         /** Toolbars, icon buttons, low-emphasis actions. */
         ghost: "text-fg-muted hover:bg-hover hover:text-fg active:bg-selected",
         /** Destructive confirmations only. */
         danger:
-          "bg-danger text-danger-fg shadow-soft hover:bg-danger-hover active:bg-danger-hover disabled:bg-hover",
+          "bg-danger text-danger-fg shadow-soft hover:bg-danger-hover active:bg-danger-hover disabled:not-aria-busy:bg-hover",
         /** Inline text action. */
         link: "h-auto px-0 text-accent-text underline-offset-4 hover:underline",
       },

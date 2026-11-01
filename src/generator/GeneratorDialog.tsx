@@ -56,7 +56,7 @@ export function GeneratorDialog() {
             {generated?.value ?? "—"}
           </output>
           {generated === null ? null : (
-            <Badge variant="accent">
+            <Badge variant="accent" className="self-start">
               {strengthLabel(generated.entropyBits)} · {Math.round(generated.entropyBits)} bits
             </Badge>
           )}

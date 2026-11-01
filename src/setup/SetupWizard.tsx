@@ -36,7 +36,7 @@ export function SetupWizard() {
           <h1 className="text-xl font-semibold tracking-tight">Welcome to efre</h1>
           <p className="text-fg-muted">
             {enrolled === 0
-              ? "Your vault opens only with your YubiKeys. Setup is coming in this phase."
+              ? "Your vault will open only with your YubiKeys."
               : `${String(enrolled)} key${enrolled === 1 ? "" : "s"} enrolled.`}
           </p>
         </div>
