@@ -4,6 +4,8 @@
 #[allow(dead_code)]
 mod clipboard;
 mod navigation;
+#[allow(dead_code)]
+mod system_events;
 mod window;
 
 use tauri::Manager;
