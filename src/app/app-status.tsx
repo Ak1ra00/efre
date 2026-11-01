@@ -39,20 +39,22 @@ export function AppStatusProvider({ children }: { children: ReactNode }) {
   // Bumped by every status change so a slow, older app_status reply never wins.
   const generation = useRef(0);
 
-  const refreshStatus = useCallback(async () => {
+  const refreshStatus = useCallback(() => {
     generation.current += 1;
     const mine = generation.current;
-    try {
-      const next = await ipc.appStatus();
-      if (mine === generation.current) {
-        setStatusState(next);
-        setError(null);
-      }
-      return next;
-    } catch (err: unknown) {
-      if (mine === generation.current) setError(toIpcError(err));
-      return null;
-    }
+    return ipc.appStatus().then(
+      (next) => {
+        if (mine === generation.current) {
+          setStatusState(next);
+          setError(null);
+        }
+        return next;
+      },
+      (err: unknown) => {
+        if (mine === generation.current) setError(toIpcError(err));
+        return null;
+      },
+    );
   }, []);
 
   const setStatus = useCallback((next: AppStatus) => {

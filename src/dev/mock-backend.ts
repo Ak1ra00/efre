@@ -32,7 +32,6 @@ import type {
   LockReason,
   PassphraseOptions,
   PasswordOptions,
-  Settings,
 } from "@/lib/ipc-types";
 import { COMMAND_NAMES, IPC_ERROR_CODES } from "@/lib/ipc-types";
 import { ITEM_LIMITS } from "@/lib/items";
@@ -117,7 +116,8 @@ const reject = (code: IpcErrorCode, message: string) => wireError(code, message)
 // The control-character check mirrors Rust's `char::is_control`.
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
-const chars = (s: string) => [...s].length;
+/** Unicode scalar values, like Rust's `chars().count()`. */
+const chars = (s: string) => Array.from(s).length;
 
 const MESSAGES: Partial<Record<IpcErrorCode, string>> = {
   "authn.cancelled": "the operation was cancelled",
@@ -144,7 +144,7 @@ export function installMockBackend(overrides: Partial<MockScenario> = {}): MockB
     setupStarted: false,
     lastLockReason: scenario.lastLockReason,
     items: scenario.empty || scenario.phase === "setup" ? [] : sampleItems(t0, scenario.extraItems),
-    settings: { ...DEFAULT_SETTINGS } as Settings,
+    settings: { ...DEFAULT_SETTINGS },
     lastGenerated: null as string | null,
     promptMs: scenario.promptMs,
     failNext: scenario.fail === null ? null : { code: scenario.fail, message: MESSAGES[scenario.fail] ?? scenario.fail },
@@ -347,7 +347,7 @@ export function installMockBackend(overrides: Partial<MockScenario> = {}): MockB
     const pool = classes.join("");
     for (;;) {
       const value = Array.from({ length: o.length }, () => pool[randomBelow(pool.length)] ?? "").join("");
-      if (classes.every((set) => [...value].some((c) => set.includes(c)))) {
+      if (classes.every((set) => Array.from(value).some((c) => set.includes(c)))) {
         return { value, entropyBits: o.length * Math.log2(pool.length) };
       }
     }
@@ -613,7 +613,7 @@ export function installMockBackend(overrides: Partial<MockScenario> = {}): MockB
     }),
   };
 
-  const ipcMock = installMockIpc(async (cmd, args) => {
+  const ipcMock = installMockIpc((cmd, args) => {
     if (!(COMMAND_NAMES as readonly string[]).includes(cmd)) {
       // Tauri rejects unknown commands with a plain string.
       throw `Command ${cmd} not found`;

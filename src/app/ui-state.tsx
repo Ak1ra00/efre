@@ -3,7 +3,7 @@
  * palette, shortcut sheet, generator). At most one is open at a time; opening one closes
  * the others. The state resets whenever the phase changes (the provider is keyed by it).
  */
-import { createContext, type ReactNode, use, useCallback, useMemo, useState } from "react";
+import { createContext, type ReactNode, use, useMemo, useState } from "react";
 
 /** Settings dialog sections (E3 renders them in this order). */
 export type SettingsSection = "keys" | "timers" | "vault" | "security";
@@ -39,78 +39,75 @@ export interface UIStateValue {
   overlayOpen: boolean;
 }
 
+interface State {
+  overlay: Overlay | null;
+  section: SettingsSection;
+  onUse: ((value: string) => void) | null;
+}
+
+type Actions = Pick<
+  UIStateValue,
+  | "openSettings"
+  | "closeSettings"
+  | "setSettingsSection"
+  | "setPaletteOpen"
+  | "setShortcutsOpen"
+  | "requestGenerator"
+  | "closeGenerator"
+>;
+
+function createActions(update: (fn: (state: State) => State) => void): Actions {
+  const open = (overlay: Overlay) => {
+    update((s) => ({ ...s, overlay }));
+  };
+  const close = (overlay: Overlay) => {
+    update((s) => (s.overlay === overlay ? { ...s, overlay: null } : s));
+  };
+  return {
+    openSettings: (section) => {
+      update((s) => ({ ...s, overlay: "settings", section: section ?? s.section }));
+    },
+    closeSettings: () => {
+      close("settings");
+    },
+    setSettingsSection: (section) => {
+      update((s) => ({ ...s, section }));
+    },
+    setPaletteOpen: (isOpen) => {
+      if (isOpen) open("palette");
+      else close("palette");
+    },
+    setShortcutsOpen: (isOpen) => {
+      if (isOpen) open("shortcuts");
+      else close("shortcuts");
+    },
+    requestGenerator: (onUse) => {
+      update((s) => ({ ...s, overlay: "generator", onUse: onUse ?? null }));
+    },
+    closeGenerator: () => {
+      update((s) => (s.overlay === "generator" ? { ...s, overlay: null, onUse: null } : { ...s, onUse: null }));
+    },
+  };
+}
+
 const UIStateContext = createContext<UIStateValue | null>(null);
 
 export function UIStateProvider({ children }: { children: ReactNode }) {
-  const [overlay, setOverlay] = useState<Overlay | null>(null);
-  const [settingsSection, setSettingsSection] = useState<SettingsSection>("keys");
-  // Wrapped in an object: a bare function passed to setState would be called as an updater.
-  const [generatorRequest, setGeneratorRequest] = useState<{ onUse: ((value: string) => void) | null }>({
-    onUse: null,
-  });
-
-  const close = useCallback((which: Overlay) => {
-    setOverlay((current) => (current === which ? null : current));
-  }, []);
-
-  const openSettings = useCallback((section?: SettingsSection) => {
-    if (section !== undefined) setSettingsSection(section);
-    setOverlay("settings");
-  }, []);
-  const closeSettings = useCallback(() => {
-    close("settings");
-  }, [close]);
-  const setPaletteOpen = useCallback(
-    (open: boolean) => {
-      if (open) setOverlay("palette");
-      else close("palette");
-    },
-    [close],
-  );
-  const setShortcutsOpen = useCallback(
-    (open: boolean) => {
-      if (open) setOverlay("shortcuts");
-      else close("shortcuts");
-    },
-    [close],
-  );
-  const requestGenerator = useCallback((onUse?: (value: string) => void) => {
-    setGeneratorRequest({ onUse: onUse ?? null });
-    setOverlay("generator");
-  }, []);
-  const closeGenerator = useCallback(() => {
-    close("generator");
-    setGeneratorRequest({ onUse: null });
-  }, [close]);
-
+  const [state, setState] = useState<State>({ overlay: null, section: "keys", onUse: null });
+  // Stable for the provider's lifetime, so consumers can use them in effect deps.
+  const [actions] = useState(() => createActions(setState));
   const value = useMemo<UIStateValue>(
     () => ({
-      settingsOpen: overlay === "settings",
-      settingsSection,
-      openSettings,
-      closeSettings,
-      setSettingsSection,
-      paletteOpen: overlay === "palette",
-      setPaletteOpen,
-      shortcutsOpen: overlay === "shortcuts",
-      setShortcutsOpen,
-      generatorOpen: overlay === "generator",
-      generatorOnUse: generatorRequest.onUse,
-      requestGenerator,
-      closeGenerator,
-      overlayOpen: overlay !== null,
+      ...actions,
+      settingsOpen: state.overlay === "settings",
+      settingsSection: state.section,
+      paletteOpen: state.overlay === "palette",
+      shortcutsOpen: state.overlay === "shortcuts",
+      generatorOpen: state.overlay === "generator",
+      generatorOnUse: state.onUse,
+      overlayOpen: state.overlay !== null,
     }),
-    [
-      overlay,
-      settingsSection,
-      openSettings,
-      closeSettings,
-      setPaletteOpen,
-      setShortcutsOpen,
-      generatorRequest,
-      requestGenerator,
-      closeGenerator,
-    ],
+    [actions, state],
   );
   return <UIStateContext value={value}>{children}</UIStateContext>;
 }

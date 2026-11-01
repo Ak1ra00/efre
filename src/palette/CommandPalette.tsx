@@ -18,7 +18,8 @@ export function CommandPalette() {
     <Dialog open={paletteOpen} onOpenChange={setPaletteOpen}>
       <DialogContent size="md" showClose={false} aria-describedby={undefined} className="top-[20%] translate-y-0">
         <DialogTitle className="sr-only">Command palette</DialogTitle>
-        <Command label="Command palette" className="flex flex-col">
+        {/* vimBindings off: cmdk would otherwise swallow Ctrl+K (it means "up" there). */}
+        <Command label="Command palette" vimBindings={false} className="flex flex-col">
           <Command.Input
             placeholder="Type a command…"
             className="h-12 border-b border-line bg-transparent px-4 text-sm outline-none placeholder:text-fg-subtle"

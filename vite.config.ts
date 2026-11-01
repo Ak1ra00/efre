@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
-import tauriConf from "./src-tauri/tauri.conf.json";
+import tauriConf from "./src-tauri/tauri.conf.json" with { type: "json" };
 
 /**
  * Must never appear in a production bundle. Same string as MOCK_MARKER in
@@ -72,6 +72,8 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       // Keep every asset as a file served by Tauri; nothing is inlined from or fetched to a remote origin.
       assetsInlineLimit: 0,
+      // One bundle loaded from local disk: splitting it would gain nothing.
+      chunkSizeWarningLimit: 1024,
     },
     test: {
       environment: "jsdom",

@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "tauri dev",
     "dev:web": "vite",
+    "dev:mock": "vite --mode mock",
+    "preview:mock": "vite build --mode mock && vite preview --mode mock --outDir node_modules/.efre-mock-preview",
     "build": "vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint --max-warnings=0 .",
