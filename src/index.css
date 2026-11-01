@@ -1,34 +1,191 @@
 @import "tailwindcss";
 
-/* Design tokens (refined in phase 4). One accent colour; dark neutral palette; 8 px grid. */
+/*
+ * efre design tokens (docs/FRONTEND.md). Sleek dark minimal: neutral palette, ONE accent
+ * (the app icon's #8b93ff), 1px borders, soft shadows, 8px rhythm, 150–200 ms motion.
+ * Contrast is WCAG 2.2 AA: body text >= 4.5:1 on every surface, control borders and
+ * focus rings >= 3:1. The default Tailwind palette is removed so only tokens are used.
+ */
 @theme {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --color-bg: #0e0f11;
-  --color-surface: #15161a;
-  --color-elevated: #1b1d22;
-  --color-border: #26282e;
-  --color-fg: #ececef;
-  --color-muted: #9b9ea8;
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Surfaces, darkest to lightest. */
+  --color-canvas: #0c0d10; /* window background */
+  --color-surface: #111216; /* sidebar, panes */
+  --color-elevated: #17181d; /* cards, popovers, dialogs */
+  --color-hover: #1e2026; /* hovered rows and menu items */
+  --color-selected: #24262d; /* selected rows (pair with an accent cue) */
+  --color-scrim: rgb(4 5 7 / 0.72); /* dialog backdrop */
+
+  /* Lines. `line` is decorative; `control` outlines inputs, checkboxes, switches (>= 3:1). */
+  --color-line: #25272d;
+  --color-line-strong: #30333a;
+  --color-control: #62656f;
+  --color-control-hover: #737680;
+
+  /* Text. */
+  --color-fg: #ececf1; /* primary, >= 12:1 */
+  --color-fg-muted: #a3a6b0; /* secondary, >= 6:1 */
+  --color-fg-subtle: #8b8e98; /* tertiary and placeholders, >= 4.6:1 */
+  --color-fg-disabled: #5d606a; /* disabled only (exempt from contrast rules) */
+
+  /* The one accent. Text on a solid accent is dark (7:1). */
   --color-accent: #8b93ff;
-  --color-accent-fg: #0e0f11;
+  --color-accent-hover: #9ba2ff;
+  --color-accent-active: #7c84f5;
+  --color-accent-fg: #0c0d10;
+  --color-accent-text: #a7adff; /* accent-coloured text and icons on dark surfaces */
+  --color-accent-soft: rgb(139 147 255 / 0.14);
+  --color-ring: #8b93ff;
+
+  /* Status colours: for meaning only, never decoration. */
+  --color-danger: #c7353b; /* solid; white text 5.2:1 */
+  --color-danger-hover: #bf3238;
+  --color-danger-fg: #ffffff;
+  --color-danger-text: #ff7b81;
+  --color-danger-soft: rgb(255 123 129 / 0.12);
+  --color-success-text: #4fd18f;
+  --color-success-soft: rgb(79 209 143 / 0.12);
+  --color-warning-text: #f2bb4f;
+  --color-warning-soft: rgb(242 187 79 / 0.12);
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+
+  /* Soft, layered shadows; raised surfaces get a faint top highlight. */
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 1px rgb(0 0 0 / 0.2);
+  --shadow-highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --shadow-popover:
+    inset 0 1px 0 rgb(255 255 255 / 0.04), 0 0 0 1px rgb(0 0 0 / 0.25), 0 2px 6px -1px rgb(0 0 0 / 0.35),
+    0 12px 32px -8px rgb(0 0 0 / 0.55);
+  --shadow-dialog:
+    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 0 1px rgb(0 0 0 / 0.3), 0 24px 64px -16px rgb(0 0 0 / 0.7);
+
+  /* Motion: 150–200 ms, eased out. The reduced-motion rule below removes it. */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: efre-fade-in 150ms var(--ease-out-soft) both;
+  --animate-fade-out: efre-fade-out 120ms ease-in both;
+  --animate-pop-in: efre-pop-in 180ms var(--ease-out-soft) both;
+  --animate-pop-out: efre-pop-out 120ms ease-in both;
+  --animate-dialog-in: efre-dialog-in 200ms var(--ease-out-soft) both;
+  --animate-dialog-out: efre-dialog-out 150ms ease-in both;
+  --animate-toast-in: efre-toast-in 200ms var(--ease-out-soft) both;
+  --animate-toast-out: efre-fade-out 150ms ease-in both;
+  --animate-spin: efre-spin 0.8s linear infinite;
+
+  @keyframes efre-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes efre-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes efre-pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+  @keyframes efre-pop-out {
+    to {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+  @keyframes efre-dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+  }
+  @keyframes efre-dialog-out {
+    to {
+      opacity: 0;
+      transform: translateY(4px) scale(0.98);
+    }
+  }
+  @keyframes efre-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  @keyframes efre-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 }
 
-:root {
-  color-scheme: dark;
+@layer base {
+  :root {
+    color-scheme: dark;
+    accent-color: var(--color-accent);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgb(139 147 255 / 0.35);
+    color: var(--color-fg);
+  }
+
+  /* One visible focus style everywhere (WCAG 2.4.7). Components may tighten the offset. */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Thin, dark native scrollbars (Chromium/WebView2). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #34363d transparent;
+  }
+
+  /*
+   * Radix inserts tiny <style> elements at runtime (scroll lock, hidden viewport
+   * scrollbars). efre's CSP (style-src 'self') blocks them, so the rules they carry
+   * live here instead.
+   */
+  body[data-scroll-locked] {
+    overflow: hidden !important;
+  }
+  [data-radix-select-viewport],
+  [data-radix-scroll-area-viewport] {
+    scrollbar-width: none;
+  }
+  [data-radix-select-viewport]::-webkit-scrollbar,
+  [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--color-bg);
-  color: var(--color-fg);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
+/* A printed page could leak secrets on screen: efre never prints. */
+@media print {
+  html {
+    display: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -39,5 +196,11 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Progress indicators are essential motion: keep them turning, slowly. */
+  .efre-essential-motion {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
   }
 }
