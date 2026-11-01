@@ -1,6 +1,8 @@
 // No console window in release builds on Windows.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[allow(dead_code)]
+mod clipboard;
 mod navigation;
 mod window;
 

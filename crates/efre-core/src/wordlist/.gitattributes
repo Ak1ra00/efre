@@ -1,0 +1,3 @@
+# The word list is embedded byte for byte and its SHA-256 is checked by a unit test.
+# Never convert its line endings (Git for Windows defaults to core.autocrlf=true).
+eff_large_wordlist.txt -text

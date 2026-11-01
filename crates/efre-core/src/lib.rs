@@ -10,6 +10,7 @@
 
 mod crypto;
 mod error;
+pub mod generator;
 mod header;
 mod item;
 mod secret;

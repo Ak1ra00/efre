@@ -28,5 +28,22 @@ secrecy.workspace = true
 thiserror.workspace = true
 arboard.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+  "Win32_Foundation",
+  # clipboard.rs: sequence number, check-and-clear, exclusion formats
+  "Win32_System_DataExchange",
+  # system_events.rs: suspend callback, session notifications, hidden window
+  "Win32_System_Power",
+  "Win32_System_RemoteDesktop",
+  "Win32_System_LibraryLoader",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_Graphics_Gdi", # WNDCLASSEXW / RegisterClassExW
+] }
+
+[target.'cfg(not(windows))'.dependencies]
+# clipboard.rs development fallback: "still ours" = same SHA-256 of the clipboard text.
+sha2.workspace = true
+
 [lints]
 workspace = true
