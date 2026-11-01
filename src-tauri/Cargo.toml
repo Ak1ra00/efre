@@ -28,5 +28,14 @@ secrecy.workspace = true
 thiserror.workspace = true
 arboard.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+# GetSystemWindowsDirectoryW: launch Explorer by full path ("Open vault folder").
+windows = { workspace = true, features = ["Win32_System_SystemInformation"] }
+
+[dev-dependencies]
+# Command-layer tests drive efre-core with the mock authenticator. Dev-only: normal and
+# release builds never compile the mock (see ARCHITECTURE §11).
+efre-authn = { workspace = true, features = ["mock"] }
+
 [lints]
 workspace = true

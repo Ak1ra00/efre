@@ -1,7 +1,7 @@
 //! The single efre window, hardened per docs/ARCHITECTURE.md §8–§10.
 
 use tauri::webview::{NewWindowResponse, PermissionResponse};
-use tauri::{AppHandle, Theme, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Theme, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 use crate::navigation;
 
@@ -21,7 +21,7 @@ const WEBVIEW2_ARGS: &str = concat!(
     " --no-first-run",
 );
 
-pub(crate) fn create_main_window(app: &AppHandle) -> tauri::Result<()> {
+pub(crate) fn create_main_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let builder = WebviewWindowBuilder::new(app, MAIN_LABEL, WebviewUrl::App("index.html".into()))
         .title("efre")
         .inner_size(1120.0, 720.0)
@@ -45,6 +45,5 @@ pub(crate) fn create_main_window(app: &AppHandle) -> tauri::Result<()> {
             .data_directory(data_dir)
     };
 
-    builder.build()?;
-    Ok(())
+    builder.build()
 }

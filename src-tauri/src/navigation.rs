@@ -7,6 +7,12 @@ use tauri::Url;
 #[cfg(debug_assertions)]
 const DEV_SERVER_PORT: u16 = 1420;
 
+/// Origin of the bundled frontend (Tauri's `tauri` protocol as WebView2 or WebKit sees it).
+#[cfg(windows)]
+const BUNDLED_ORIGIN: &str = "http://tauri.localhost";
+#[cfg(not(windows))]
+const BUNDLED_ORIGIN: &str = "tauri://localhost";
+
 /// Returns true only for efre's own app origin.
 pub(crate) fn is_app_url(url: &Url) -> bool {
     match (url.scheme(), url.host_str(), url.port()) {
@@ -20,10 +26,45 @@ pub(crate) fn is_app_url(url: &Url) -> bool {
     }
 }
 
+/// The root of efre's frontend, the same base Tauri uses for `WebviewUrl::App`: the dev
+/// server in dev mode, the bundled origin otherwise. Navigating there loads a fresh
+/// document, which discards all JS state (lock, ARCHITECTURE §6.6). `None` if the result
+/// would not be an app URL, in which case the caller reloads instead.
+pub(crate) fn app_root_url(config: &tauri::Config) -> Option<Url> {
+    let dev_server = if tauri::is_dev() {
+        config.build.dev_url.clone()
+    } else {
+        None
+    };
+    let base = match dev_server {
+        Some(url) => url,
+        None => Url::parse(BUNDLED_ORIGIN).ok()?,
+    };
+    let root = base.join("/").ok()?;
+    is_app_url(&root).then_some(root)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::is_app_url;
+    use super::{app_root_url, is_app_url};
     use tauri::Url;
+
+    #[test]
+    fn root_url_is_the_app_origin() {
+        let mut config = tauri::Config::default();
+        let root = app_root_url(&config).expect("bundled origin");
+        assert!(is_app_url(&root));
+        assert_eq!(root.path(), "/");
+        // Tests build without `custom-protocol`, i.e. in dev mode: the dev server wins.
+        config.build.dev_url = Some(Url::parse("http://localhost:1420").expect("url"));
+        assert_eq!(
+            app_root_url(&config).map(String::from).as_deref(),
+            Some("http://localhost:1420/")
+        );
+        // Never anything that the navigation policy would block.
+        config.build.dev_url = Some(Url::parse("http://localhost:9999/app/").expect("url"));
+        assert_eq!(app_root_url(&config), None);
+    }
 
     fn allowed(s: &str) -> bool {
         is_app_url(&Url::parse(s).expect("valid test URL"))
