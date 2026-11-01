@@ -39,11 +39,21 @@ windows = { workspace = true, features = [
   "Win32_System_LibraryLoader",
   "Win32_UI_WindowsAndMessaging",
   "Win32_Graphics_Gdi", # WNDCLASSEXW / RegisterClassExW
+  # GetSystemWindowsDirectoryW: launch Explorer by full path ("Open vault folder").
+  "Win32_System_SystemInformation",
 ] }
+# The WebView2 settings Tauri doesn't expose: browser accelerator keys and the default
+# context menu (print, save as). Already in the graph through tauri/wry: same version.
+webview2-com = "0.39"
 
 [target.'cfg(not(windows))'.dependencies]
 # clipboard.rs development fallback: "still ours" = same SHA-256 of the clipboard text.
 sha2.workspace = true
+
+[dev-dependencies]
+# Command-layer tests drive efre-core with the mock authenticator. Dev-only: normal and
+# release builds never compile the mock (see ARCHITECTURE §11).
+efre-authn = { workspace = true, features = ["mock"] }
 
 [lints]
 workspace = true
