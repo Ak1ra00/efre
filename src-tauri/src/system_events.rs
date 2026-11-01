@@ -3,8 +3,9 @@
 //!
 //! - **Suspend.** `PowerRegisterSuspendResumeNotification(DEVICE_NOTIFY_CALLBACK, …)`. Windows
 //!   calls back on one of its own threads with `PBT_APMSUSPEND` before the computer sleeps or
-//!   hibernates, and allows about two seconds for it. `on_event` runs inside that callback,
-//!   so a lock it does synchronously finishes before RAM is written to `hiberfil.sys`.
+//!   hibernates. `on_event` runs inside that callback, so it should lock synchronously,
+//!   before the callback returns. Microsoft gives handlers of `PBT_APMSUSPEND` about two
+//!   seconds, which is ample for wiping keys before RAM is written to `hiberfil.sys`.
 //! - **Session changes.** `WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION)`
 //!   sends `WM_WTSSESSION_CHANGE` to a hidden window, which a dedicated thread owns and pumps.
 //!   The mapping is:
@@ -22,10 +23,12 @@
 //! Other programs can find a top-level window, so this one ignores `WM_CLOSE` and stray
 //! `WM_QUIT` messages. Only dropping [`SystemEvents`] stops it.
 //!
-//! `on_event` must be quick and must not drop the [`SystemEvents`] guard. It runs on a
-//! Windows thread (suspend) or on the window thread (session changes), possibly on both at
-//! once. A panic in it aborts the process, because the callbacks cannot unwind into
-//! Windows; the vault is then gone with the process, which is the safe outcome.
+//! `on_event` must be quick. It runs on a Windows thread (suspend) or on the window thread
+//! (session changes), possibly on both at once. Do not drop the [`SystemEvents`] guard from
+//! inside `on_event`, or while holding a lock that `on_event` takes: unregistering may wait
+//! for a callback that is still running. A panic in `on_event` aborts the process, because
+//! the callbacks cannot unwind into Windows; the vault is then gone with the process, which
+//! is the safe outcome.
 //!
 //! On other platforms (development only), [`watch`] returns a guard that does nothing.
 
