@@ -21,6 +21,8 @@ pub(crate) struct Facts<'a> {
     pub(crate) settings: Option<Settings>,
     pub(crate) presence: &'a Monitor,
     pub(crate) system_events: &'a Monitor,
+    /// The webview's own shortcuts and context menu are off.
+    pub(crate) browser_ui: &'a Monitor,
 }
 
 pub(crate) fn info(facts: Facts<'_>) -> SecurityInfo {
@@ -89,6 +91,16 @@ pub(crate) fn info(facts: Facts<'_>) -> SecurityInfo {
             "Locking when the YubiKey is unplugged is unavailable: {reason}"
         )),
     }
+    match facts.browser_ui {
+        Monitor::Active => protections.push(
+            "The browser's own shortcuts and context menu (print, save page, find, reload) \
+             are off, so the window can't be printed or saved to a file"
+                .to_owned(),
+        ),
+        Monitor::Unavailable(reason) => limits.push(format!(
+            "Turning off the browser's print and save shortcuts is unavailable: {reason}"
+        )),
+    }
     SecurityInfo {
         app_version: env!("CARGO_PKG_VERSION").to_owned(),
         format_version: efre_core::FORMAT_VERSION,
@@ -115,12 +127,14 @@ mod tests {
             }),
             presence,
             system_events,
+            browser_ui: presence,
         }
     }
 
     #[test]
     fn active_triggers_are_protections() {
         let info = info(facts(&Monitor::Active, &Monitor::Active));
+        assert!(info.protections.join("\n").contains("can't be printed"));
         assert_eq!(info.webauthn_api_version, Some(9));
         assert_eq!(info.key_count, 2);
         assert_eq!(info.format_version, efre_core::FORMAT_VERSION);
@@ -152,6 +166,11 @@ mod tests {
             limits.contains("sign-out is unavailable: no events"),
             "{limits}"
         );
+        assert!(
+            limits.contains("save shortcuts is unavailable: no watcher"),
+            "{limits}"
+        );
+        assert!(!protections.contains("can't be printed"), "{protections}");
         assert!(limits.contains("whole vault file"), "{limits}");
     }
 

@@ -31,6 +31,9 @@ arboard.workspace = true
 [target.'cfg(windows)'.dependencies]
 # GetSystemWindowsDirectoryW: launch Explorer by full path ("Open vault folder").
 windows = { workspace = true, features = ["Win32_System_SystemInformation"] }
+# The WebView2 settings Tauri doesn't expose: browser accelerator keys and the default
+# context menu (print, save as). Already in the graph through tauri/wry: same version.
+webview2-com = "0.39"
 
 [dev-dependencies]
 # Command-layer tests drive efre-core with the mock authenticator. Dev-only: normal and

@@ -51,6 +51,30 @@ mod imp {
         Ok((watcher, present))
     }
 
+    /// Turns off WebView2's browser accelerator keys (print, save page, find, reload,
+    /// zoom, devtools) and its default context menu (print, save as, inspect), so the
+    /// page can't be printed or saved to a file. Editing keys (Ctrl+C/V/X/A/Z) and the
+    /// page's own shortcuts keep working. Must run on the UI thread, as `with_webview`
+    /// does.
+    pub(crate) fn disable_browser_ui(
+        webview: &tauri::webview::PlatformWebview,
+    ) -> windows::core::Result<()> {
+        use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Settings3;
+        use windows::core::Interface as _;
+
+        let controller = webview.controller();
+        // SAFETY: `controller` is the live WebView2 controller of efre's window, used
+        // on the UI thread that owns it.
+        let core = unsafe { controller.CoreWebView2() }?;
+        // SAFETY: as above; `core` is that controller's live ICoreWebView2.
+        let settings = unsafe { core.Settings() }?;
+        // SAFETY: as above; `settings` belongs to that webview.
+        unsafe { settings.SetAreDefaultContextMenusEnabled(false) }?;
+        let settings: ICoreWebView2Settings3 = settings.cast()?;
+        // SAFETY: as above.
+        unsafe { settings.SetAreBrowserAcceleratorKeysEnabled(false) }
+    }
+
     /// `C:\Windows`, from the OS rather than from the (inheritable) environment.
     fn windows_directory() -> io::Result<PathBuf> {
         let mut buffer = vec![0u16; 260];
@@ -102,10 +126,10 @@ mod imp {
     }
 }
 
-#[cfg(windows)]
-pub(crate) use imp::show_in_explorer;
 #[cfg(all(windows, not(feature = "dev-mock")))]
 pub(crate) use imp::{authenticator, watch_presence};
+#[cfg(windows)]
+pub(crate) use imp::{disable_browser_ui, show_in_explorer};
 
 /// Elsewhere there is no Explorer: checks the path the same way, then does nothing.
 #[cfg(not(windows))]

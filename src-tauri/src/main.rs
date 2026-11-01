@@ -160,8 +160,10 @@ fn main() {
     // The watchers live exactly as long as the event loop.
     let mut watchers: Option<monitors::Monitors> = None;
     app.run(move |handle, event| match event {
+        // Right after `setup`, before the event loop has served the first page.
         RunEvent::Ready => {
             if let Some(state) = handle.try_state::<Arc<AppState>>() {
+                window::lock_down_browser_ui(handle, state.inner());
                 watchers = Some(monitors::start(state.inner()));
             }
         }

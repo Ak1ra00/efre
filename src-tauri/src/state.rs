@@ -105,6 +105,8 @@ pub(crate) struct AppState {
     request_rx: Mutex<Option<mpsc::Receiver<LockRequest>>>,
     presence: Mutex<Monitor>,
     system_events: Mutex<Monitor>,
+    /// The webview's own shortcuts and context menu (print, save as) are off.
+    browser_ui: Mutex<Monitor>,
 }
 
 fn guard<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -202,6 +204,7 @@ impl AppState {
             request_rx: Mutex::new(Some(request_rx)),
             presence: not_started(),
             system_events: not_started(),
+            browser_ui: not_started(),
         }
     }
 
@@ -668,6 +671,7 @@ impl AppState {
         drop(slot);
         let presence = guard(&self.presence).clone();
         let system_events = guard(&self.system_events).clone();
+        let browser_ui = guard(&self.browser_ui).clone();
         security::info(security::Facts {
             api_version: self.env.api_version,
             vault_path: self.vault_path_display(),
@@ -675,6 +679,7 @@ impl AppState {
             settings,
             presence: &presence,
             system_events: &system_events,
+            browser_ui: &browser_ui,
         })
     }
 
@@ -684,6 +689,10 @@ impl AppState {
 
     pub(crate) fn set_system_events_monitor(&self, monitor: Monitor) {
         *guard(&self.system_events) = monitor;
+    }
+
+    pub(crate) fn set_browser_ui_monitor(&self, monitor: Monitor) {
+        *guard(&self.browser_ui) = monitor;
     }
 
     // ------------------------------------------------------------------ lock

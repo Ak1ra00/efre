@@ -1154,6 +1154,7 @@ fn security_info_reports_what_is_active() {
     );
     h.state.set_presence_monitor(Monitor::Active);
     h.state.set_system_events_monitor(Monitor::Active);
+    h.state.set_browser_ui_monitor(Monitor::Active);
     let info = h.state.security_info();
     let protections = info.protections.join("\n");
     assert!(
