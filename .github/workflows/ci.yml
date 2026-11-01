@@ -68,8 +68,9 @@ jobs:
             exit 1
           fi
           grep -q "must never be enabled in a release build" mock-release.log
-          # 2. The app's release feature graph must not enable the mock.
-          if cargo tree --locked -p efre -e features --target x86_64-pc-windows-msvc | grep -q 'efre-authn feature "mock"'; then
+          # 2. The app's normal/build feature graph (dev-dependencies excluded: tests may use
+          #    the mock) must not enable it.
+          if cargo tree --locked -p efre -e no-dev,features --target x86_64-pc-windows-msvc | grep -q 'efre-authn feature "mock"'; then
             echo "::error::efre's release dependency graph enables efre-authn/mock"
             exit 1
           fi
