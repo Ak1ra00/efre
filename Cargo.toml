@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.90"
 publish = false
-license = "LicenseRef-Proprietary"
+license = "MIT"
 repository = "https://github.com/Ak1ra00/efre"
 
 # Every dependency is justified in docs/ARCHITECTURE.md §12.

@@ -1,0 +1,49 @@
+# Third-party notices
+
+efre's own code is under the MIT License (see [LICENSE](LICENSE)). The app also ships
+or embeds the material below, each under its own license.
+
+## Embedded data and assets
+
+### EFF Large Wordlist for Passphrases
+- **Used by:** the passphrase generator. It is embedded unmodified in `efre-core`, and
+  a test checks its SHA-256.
+- **Copyright:** Electronic Frontier Foundation.
+- **License:** [Creative Commons Attribution 3.0 United States](https://creativecommons.org/licenses/by/3.0/us/).
+- **Source:** <https://www.eff.org/dice>.
+
+### Inter typeface
+- **Used by:** the user interface, bundled through `@fontsource-variable/inter`.
+- **Copyright:** 2016 The Inter Project Authors (<https://github.com/rsms/inter>).
+- **License:** [SIL Open Font License 1.1](https://openfontlicense.org).
+
+### Lucide icons
+- **Used by:** the user interface, through `lucide-react`.
+- **Copyright:** Lucide Contributors.
+- **License:** ISC.
+
+### SQLite
+The vault file is a SQLite database. SQLite is compiled in through `rusqlite`'s
+`bundled` feature, and it is in the public domain.
+
+### Yubico attestation root certificates
+- **Used by:** enrollment, which checks that a key really is a YubiKey. The public CA
+  certificates in `crates/efre-authn/src/roots/` are embedded for that check only.
+- **Source:** Yubico, at <https://developers.yubico.com/PKI/>.
+
+"YubiKey" and "Yubico" are trademarks of Yubico AB. efre is an independent project and
+is not affiliated with or endorsed by Yubico. The app uses no Yubico logos or artwork;
+its key illustration is original.
+
+## Libraries
+The Rust crates and npm packages that efre depends on keep their own licenses.
+
+CI rejects any Rust crate whose license is not on the permissive allow-list in
+[`deny.toml`](deny.toml). The allowed licenses are MIT, Apache-2.0, BSD-3-Clause, ISC,
+Zlib, MPL-2.0, Unicode-3.0, BlueOak-1.0.0 and similar.
+
+To list every dependency with its license:
+```sh
+cargo deny list                       # Rust crates
+npm query ".prod"                     # npm packages that ship in the app (see "license")
+```
