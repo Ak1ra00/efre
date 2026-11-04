@@ -144,7 +144,7 @@ Locking wipes everything decrypted from memory and resets the window. The unlock
 screen tells you why it locked.
 
 ### 9. Settings
-Press **Ctrl+,** or use the palette. Settings has four sections:
+Open **Settings** from the sidebar or the palette (Ctrl+K). It has four sections:
 - **YubiKeys:** see each key's nickname and enrolled date, and add, rename or remove
   keys. Every change needs your PIN and a touch.
 - **Timers:** the auto-lock delay (1–120 minutes) and the clipboard clear delay
