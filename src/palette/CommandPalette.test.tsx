@@ -10,7 +10,7 @@ import { useUIState } from "@/app/ui-state";
 import { Toaster } from "@/components/ui/toast";
 import { mockIpc } from "@/test/ipc-mock";
 
-import { CommandPalette } from "./CommandPalette";
+import { CommandPalette, filter } from "./CommandPalette";
 
 function Commands({ commands }: { commands: Command[] }) {
   useRegisterCommands(commands);
@@ -122,5 +122,12 @@ describe("CommandPalette", () => {
     await user.keyboard("{Control>}k{/Control}");
     await user.type(await screen.findByPlaceholderText("Type a command…"), "fail{Enter}");
     expect(await screen.findByText("Something went wrong")).toBeInTheDocument();
+  });
+
+  it("drops letters scattered across a command's words but keeps real fuzzy matches", () => {
+    expect(filter("x", "copy", ["Copy password", "Item", "clipboard"])).toBeGreaterThan(0.5);
+    expect(filter("x", "copy", ["Custom", "Go to", "show", "type"])).toBe(0);
+    expect(filter("x", "gen", ["Cards", "Go to", "show", "type"])).toBe(0);
+    expect(filter("x", "pw", ["Password generator", "Vault"])).toBeGreaterThan(0);
   });
 });

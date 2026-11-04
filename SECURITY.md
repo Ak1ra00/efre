@@ -108,8 +108,8 @@ No software can promise everything. These are the limits of efre's design:
 2. **Set a good FIDO2 PIN** on each key: 6 or more characters, and not your Windows
    PIN.
 3. **Turn on BitLocker** or device encryption.
-4. **Back up `vault.efre` yourself.** Use Settings → **Open vault folder** and copy the
-   file while efre is closed or locked. Backups are only as useful as your keys, so
+4. **Back up `vault.efre` yourself.** Use Settings → Vault file → **Open vault folder**
+   and copy the file. Backups are only as useful as your keys, so
    keep at least one enrolled key safe.
 5. **Lost a key?** Open efre with another key, go to Settings → YubiKeys → **Remove**,
    then replace your old backup copies with a fresh one.

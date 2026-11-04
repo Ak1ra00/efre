@@ -99,7 +99,7 @@ screen explains what happened and how to fix it. See
 [Troubleshooting](#troubleshooting).
 
 ### 4. Add and find items
-- **New item:** press **Ctrl+N**, or use **New** in the sidebar. Pick a kind: Login,
+- **New item:** press **Ctrl+N**, or use **New item** in the sidebar. Pick a kind: Login,
   Secure Note (Markdown), Card, Identity, or Custom.
   - Custom fields can be text, hidden, URL, email, phone, date or multiline.
 - **Organise:** add tags, star favorites, change the sort order, and filter by kind,
@@ -124,7 +124,8 @@ an item, open the generator, lock, open settings, and so on.
 ![The Ctrl+K command palette](docs/images/screenshot-palette.png)
 
 ### 7. Generate passwords and passphrases
-Open the generator from the palette, or from a password field in the editor.
+Open **Password generator** in the sidebar or the palette, or use **Generate** on a
+password field in the editor.
 - **Passwords** of 8–128 characters, from the character groups you choose.
 - **Passphrases** of 3–12 words from the EFF long wordlist.
 - The strength meter shows the estimated entropy.
@@ -147,9 +148,10 @@ screen tells you why it locked.
 Open **Settings** from the sidebar or the palette (Ctrl+K). It has four sections:
 - **YubiKeys:** see each key's nickname and enrolled date, and add, rename or remove
   keys. Every change needs your PIN and a touch.
-- **Timers:** the auto-lock delay (1–120 minutes) and the clipboard clear delay
-  (5–300 seconds).
-- **Vault:** **Open vault folder**, so you can back up the encrypted file.
+- **Auto-lock & clipboard:** how long efre waits before locking (1–120 minutes), and
+  before clearing a copied value (10–120 seconds).
+- **Vault file:** where the vault is, and **Open vault folder**, so you can back up
+  the encrypted file.
 - **Security:** the protections active on this PC, and the honest limits.
 
 ![Managing YubiKeys in Settings](docs/images/screenshot-settings.png)
@@ -170,7 +172,7 @@ efre won't let you remove your last key.
 ### 11. Back up your vault
 Your vault is a single encrypted file: **`%LOCALAPPDATA%\efre\vault.efre`**.
 
-1. In efre, open **Settings → Vault → Open vault folder** (or lock efre first).
+1. In efre, open **Settings → Vault file → Open vault folder**.
 2. Copy **`vault.efre`** to a USB drive or another disk.
 3. To restore, quit efre and put the file back in that folder.
 
@@ -219,8 +221,9 @@ cryptographic specification.
 | **Update Windows** | Your Windows can't provide the key secret efre needs. Install all Windows updates. |
 | **Not a genuine YubiKey** | efre only enrolls YubiKeys whose attestation verifies. |
 | **The vault failed its integrity check** / **The vault file is damaged** | `vault.efre` was changed or damaged outside efre. Quit efre and restore a backup you trust. |
-| **The vault is in use** | Another program has `vault.efre` open (a backup tool, or a second copy of the file in use). Close it and try again. |
-| **"efre is not supported on this PC"** | The screen names the reason. It's usually an old Windows version or missing WebView2. |
+| **The vault is in use** | Another program, such as a backup or sync tool, has `vault.efre` open. Close it and try again. |
+| **Update Windows to use efre** | Your Windows is too old for the YubiKey features efre needs. Install all Windows updates, then choose **Check again**. |
+| **efre can't open your vault** | The screen gives the reason. Usually `vault.efre` is damaged or isn't an efre vault: restore a backup you trust. |
 
 ## Build from source
 

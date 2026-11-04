@@ -27,10 +27,18 @@ function groupCommands(commands: readonly Command[]): [string, Command[]][] {
   return [...groups];
 }
 
+/**
+ * cmdk's scorer also matches letters scattered across the title, group and keywords
+ * (for example "copy" against "Custom" in "Go to"). Those scores sit far below a real
+ * match, so they are dropped instead of cluttering the list.
+ */
+const MIN_SCORE = 0.05;
+
 /** Items are keyed by id; match on the title first, then group and keywords. */
-function filter(value: string, search: string, keywords?: string[]): number {
+export function filter(value: string, search: string, keywords?: string[]): number {
   const [title, ...rest] = keywords ?? [];
-  return defaultFilter(title ?? value, search, rest);
+  const score = defaultFilter(title ?? value, search, rest);
+  return score < MIN_SCORE ? 0 : score;
 }
 
 export function CommandPalette() {
