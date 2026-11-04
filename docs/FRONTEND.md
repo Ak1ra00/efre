@@ -122,8 +122,12 @@ link; `size`: sm, md, lg, icon, icon-sm; `loading`), `checkbox`, `dialog` (with
 `empty-state`, `field` (label + hint + inline error, ids wired), `input`, `kbd`
 (`KbdCombo combo="Ctrl+K"`), `label`, `popover`, `scroll-area`, `select`, `separator`,
 `skeleton`, `slider`, `spinner`, `switch`, `tabs`, `textarea`, `toast` (`Toaster`),
-`tooltip` (`Tip label shortcut`). `@/components/brand/logo` has `EfreMark`. See them all
-at `/?gallery` in the mock preview.
+`tooltip` (`Tip label shortcut`). `@/components/brand/logo` has `EfreMark`, and
+`@/components/brand/tifinagh` has `TifinaghName`: the name ⵉⴼⵔⵉ (*ifri*, "cave" in
+Tamazight) in the bundled Noto Sans Tifinagh, with the `font-tifinagh` utility. It is
+decorative next to the Latin name; pass `label` when it stands alone. Keep it on the
+welcome screen, in the sidebar, on the unlock screen and in Settings › Security. See the
+primitives at `/?gallery` in the mock preview.
 
 ## Design tokens (`src/index.css`)
 
