@@ -37,7 +37,7 @@ limits.
 | | |
 |---|---|
 | **Windows** | Windows 11 with current updates. efre needs Windows' security-key interface (WebAuthn API) at version 4 or later; it has been tested on version 9. Windows 10 works only if its updates reach that version. efre checks at start and says so if Windows is too old. |
-| **WebView2** | Built into Windows 11. On Windows 10 it comes with Microsoft Edge. |
+| **WebView2** | Draws efre's window. It's built into Windows 11, and the installer adds it if your PC doesn't have it. |
 | **YubiKeys** | Two YubiKeys with FIDO2: YubiKey 5 series, Security Key series, or YubiKey Bio. One works, but you'll be reminded to add a backup. |
 | **A FIDO2 PIN** | Set on each key. See [step 1](#1-set-a-pin-on-each-yubikey) below. |
 
@@ -45,21 +45,29 @@ efre never asks for administrator rights.
 
 ## Install
 
-> **Note:** efre doesn't have a signed release yet. Until code signing is in place,
-> the installer comes from the project's CI builds.
+1. Open the [**latest release**](https://github.com/Ak1ra00/efre/releases/latest), and
+   download **`efre_<version>_x64-setup.exe`**.
+2. Optional, but recommended: check the download. In PowerShell, in your Downloads
+   folder, run
+   `(Get-FileHash .\efre_<version>_x64-setup.exe -Algorithm SHA256).Hash`. The result
+   must match the checksum on the release page and in `SHA256SUMS.txt`.
+3. Run the installer. It sets up everything efre needs, for your user only, so there
+   is no admin prompt, and it downloads nothing:
+   - efre itself, in `%LOCALAPPDATA%\Programs\efre`;
+   - Microsoft's WebView2 runtime, but only if your PC doesn't have it yet. Windows 11
+     already does. The release installer carries Microsoft's offline WebView2
+     installer for this.
 
-1. Open the [**Actions** page](https://github.com/Ak1ra00/efre/actions/workflows/ci.yml),
-   signed in to GitHub.
-2. Open the newest run on branch `main` that has a green tick.
-3. Under **Artifacts**, download **`efre-windows-unsigned-…`** and unzip it.
-4. Run **`bundle\nsis\efre_0.1.0_x64-setup.exe`**.
-   - SmartScreen warns about unsigned apps. Choose **More info → Run anyway**.
-   - efre installs for your user only, into `%LOCALAPPDATA%\Programs\efre`, so there
-     is no admin prompt.
-5. Start **efre** from the Start menu.
+   The installer isn't code-signed yet, so SmartScreen warns about it. Choose
+   **More info → Run anyway**.
+4. Start **efre** from the Start menu.
 
 Your vault is kept separately, in `%LOCALAPPDATA%\efre`. Uninstalling efre (Settings →
 Apps → Installed apps) removes the program and never touches the vault.
+
+Development builds of every commit are in the
+[Actions](https://github.com/Ak1ra00/efre/actions/workflows/ci.yml) runs under
+**Artifacts** (`efre-windows-unsigned-…`). They leave out WebView2.
 
 Prefer to build it yourself? See [Build from source](#build-from-source).
 
@@ -253,6 +261,8 @@ cd efre
 rustup toolchain install
 npm.cmd ci
 npm.cmd run tauri build      # installer: target\release\bundle\nsis\
+# The release installer, with the offline WebView2 installer inside:
+npm.cmd run tauri -- build --bundles nsis --config src-tauri/tauri.release.conf.json
 ```
 
 ### Development commands

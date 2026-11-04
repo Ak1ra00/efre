@@ -106,7 +106,9 @@ No software can promise everything. These are the limits of efre's design:
   WebView2 runtime and the YubiKey's firmware. A flaw in any of them is outside
   efre's control.
 - **Unsigned builds:** installers are not code-signed yet, so Windows SmartScreen
-  warns about them. Build from source if you want to verify exactly what runs.
+  warns about them. Each release lists the installer's SHA-256 checksum. Check it
+  before running the installer, or build from source if you want to verify exactly
+  what runs.
 
 ## Using efre safely
 1. **Enroll two YubiKeys** and keep the backup somewhere else, away from your PC

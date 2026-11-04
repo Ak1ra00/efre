@@ -851,9 +851,23 @@ See §3.3 for what it doesn't block.
       and needs a different fallback elsewhere.
     - Its interaction with `WDA_EXCLUDEFROMCAPTURE` and the dark title bar would
       need testing on every target.
-- **Installer:** NSIS with `installMode: currentUser`, so no admin.
-  `webviewInstallMode: skip`, because WebView2 ships with Windows 11 and the
-  bootstrapper would download. The installer is unsigned for now.
+- **Installer:** NSIS with `installMode: currentUser`, so no admin. The installer
+  is unsigned for now.
+  - **Releases** (`.github/workflows/release.yml`, on a `v*` tag) merge
+    `src-tauri/tauri.release.conf.json`, which sets `webviewInstallMode` to
+    `offlineInstaller`. The installer then carries Microsoft's offline WebView2
+    Runtime installer, about 180 MB.
+    - The tauri-bundler template runs it only when WebView2 isn't registered in
+      HKLM or HKCU.
+    - It runs with the installer's own rights, so WebView2 is installed per user,
+      with no admin and no download at install time.
+    - The workflow checks that the embedded installer is validly signed by
+      Microsoft and that the setup file contains it. It runs the smoke and
+      installer tests (`scripts/ci/`) on the exact file it publishes, then
+      attaches it and `SHA256SUMS.txt` to the GitHub release.
+  - **CI builds** keep `webviewInstallMode: skip`. They stay small, and Windows 11
+    already ships WebView2. The bootstrapper modes are never used, because they
+    download at install time.
   - The installer puts efre in `%LOCALAPPDATA%\Programs\efre`, Windows' folder for
     per-user programs. The template's default, `%LOCALAPPDATA%\<productName>`, is
     the vault folder, so the binaries and the vault would otherwise share a folder.
@@ -1017,6 +1031,12 @@ Things to know:
     with nothing in `%LOCALAPPDATA%\efre`. A silent uninstall must then leave a
     stand-in `vault.efre` byte-identical, keep the `webview` folder, and remove
     the WER exclusion value.
+
+  Both tests live in `scripts/ci/` (`smoke-test.ps1`, `installer-test.ps1`), and the
+  release workflow (§9) runs them too.
+  - They refuse to run outside GitHub Actions.
+  - The installer test also refuses to run where a `vault.efre` already exists,
+    because it writes a stand-in one.
 
   An extra `ubuntu-latest` job runs the `efre-core` and `efre-authn` tests to
   prove they are platform-independent.

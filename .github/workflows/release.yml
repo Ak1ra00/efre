@@ -1,0 +1,148 @@
+name: Release
+
+# Publishes a GitHub release when a version tag such as v0.1.0 is pushed.
+#
+# The installer is built with src-tauri/tauri.release.conf.json, which embeds
+# Microsoft's offline WebView2 runtime installer. On a PC without WebView2, the
+# installer installs it per user, without admin and without downloading anything.
+# So the one file sets up everything efre needs (ARCHITECTURE section 9).
+#
+# The installer that gets published is the exact file the smoke test and the
+# installer test ran against in this job.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+# Third-party actions are pinned to full commit SHAs (tag in the trailing comment).
+jobs:
+  release:
+    name: Build, test and publish the Windows installer
+    runs-on: windows-latest
+    permissions:
+      contents: write # gh release create
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      # No caches: a release is built from a clean slate.
+      - run: npm ci
+      - name: Install the pinned Rust toolchain (rust-toolchain.toml)
+        run: rustup toolchain install
+
+      - name: The tag matches the app version
+        shell: pwsh
+        run: |
+          $tauri = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $npm = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $cargo = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          Write-Host "tag $env:TAG; tauri.conf.json $tauri; package.json $npm; Cargo.toml $cargo"
+          if ($env:TAG -ne "v$tauri" -or $npm -ne $tauri -or $cargo -ne $tauri) {
+            throw "The tag and the versions in tauri.conf.json, package.json and Cargo.toml must all match."
+          }
+          "VERSION=$tauri" >> $env:GITHUB_ENV
+
+      - name: Build the installer (embeds the offline WebView2 runtime installer)
+        shell: pwsh
+        run: npm run tauri -- build --ci --bundles nsis --config "$((Resolve-Path src-tauri/tauri.release.conf.json).Path)"
+
+      - name: The embedded WebView2 installer is Microsoft's, and is in the installer
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = @(Get-ChildItem 'target\release\bundle\nsis\*-setup.exe')
+          if ($setup.Count -ne 1) { throw "expected one installer, found $($setup.Count)" }
+          $mb = [math]::Round($setup[0].Length / 1MB)
+          Write-Host "$($setup[0].Name): $mb MB"
+          if ($setup[0].Length -lt 100MB) { throw "the installer is only $mb MB, so the WebView2 installer isn't in it" }
+
+          # Check the copy inside the setup file itself: 7-Zip opens NSIS installers.
+          $pattern = 'MicrosoftEdgeWebView2RuntimeInstaller*.exe'
+          $found = @()
+          $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
+          if ($sevenZip) {
+            $out = Join-Path $env:RUNNER_TEMP 'efre-setup-contents'
+            & $sevenZip.Source x "-o$out" -y -r $setup[0].FullName $pattern | Out-Null
+            Write-Host "7-Zip exit code: $LASTEXITCODE"
+            $found = @(Get-ChildItem -Path $out -Recurse -Filter $pattern -ErrorAction SilentlyContinue)
+          }
+          if ($found.Count -eq 0) {
+            Write-Host '::warning::7-Zip did not extract the WebView2 installer; checking the copy tauri build downloaded'
+            $found = @(Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'tauri'), 'target' -Recurse -Filter $pattern -ErrorAction SilentlyContinue)
+          }
+          if ($found.Count -eq 0) { throw "no $pattern found to check" }
+          foreach ($file in $found) {
+            $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+            $subject = "$($signature.SignerCertificate.Subject)"
+            Write-Host "$($file.FullName): $([math]::Round($file.Length / 1MB)) MB, $($signature.Status), $subject"
+            if ($signature.Status -ne 'Valid' -or $subject -notmatch 'O=Microsoft Corporation') {
+              throw "$($file.Name) is not validly signed by Microsoft"
+            }
+          }
+
+      - name: Smoke test (release app starts, shows a screen, zero sockets)
+        shell: powershell
+        timeout-minutes: 5
+        run: ./scripts/ci/smoke-test.ps1 -Exe target\release\efre.exe
+
+      - name: Installer location and uninstall keep the vault folder intact
+        shell: powershell
+        timeout-minutes: 10
+        run: ./scripts/ci/installer-test.ps1 -BundleDir target\release\bundle\nsis
+
+      - name: Checksums and release notes
+        shell: pwsh
+        run: |
+          $setup = Get-Item 'target\release\bundle\nsis\*-setup.exe'
+          New-Item -ItemType Directory -Force -Path release-files | Out-Null
+          Copy-Item -LiteralPath $setup.FullName -Destination release-files
+          $hash = (Get-FileHash -LiteralPath $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($setup.Name)" | Set-Content -LiteralPath release-files/SHA256SUMS.txt -Encoding ascii
+          $notes = (Get-Content -LiteralPath .github/release-notes.md -Raw -Encoding utf8).
+            Replace('{{VERSION}}', $env:VERSION).
+            Replace('{{TAG}}', $env:TAG).
+            Replace('{{SETUP}}', $setup.Name).
+            Replace('{{SIZE_MB}}', [string][math]::Round($setup.Length / 1MB)).
+            Replace('{{SHA256}}', $hash)
+          Set-Content -LiteralPath release-files/notes.md -Value $notes -Encoding utf8
+          Get-Content release-files/SHA256SUMS.txt
+
+      - name: Keep the release files as a workflow artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: efre-release-${{ github.ref_name }}
+          path: |
+            release-files/*.exe
+            release-files/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish the GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $setup = (Get-Item 'release-files\*-setup.exe').FullName
+          gh release create $env:TAG $setup release-files/SHA256SUMS.txt `
+            --repo $env:GITHUB_REPOSITORY `
+            --title "efre $env:VERSION" `
+            --notes-file release-files/notes.md `
+            --verify-tag
+          if ($LASTEXITCODE -ne 0) { throw "gh release create failed ($LASTEXITCODE)" }
+          gh release view $env:TAG --repo $env:GITHUB_REPOSITORY --json name,tagName,url,assets --jq '{name, tagName, url, assets: [.assets[] | {name, size}]}'

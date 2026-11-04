@@ -30,6 +30,16 @@ or embeds the material below, each under its own license.
 - **Copyright:** Lucide Contributors.
 - **License:** ISC.
 
+### Microsoft Edge WebView2 Runtime (release installers only)
+- **Used by:** the installers on the GitHub Releases page. They carry Microsoft's
+  offline WebView2 Runtime installer, unmodified, and run it only when the PC doesn't
+  have WebView2 yet. The release workflow checks that it is validly signed by
+  Microsoft.
+- **Copyright:** Microsoft Corporation. WebView2 is redistributed as Microsoft allows
+  for apps that use it, under the Microsoft Edge WebView2 Runtime license terms
+  (<https://developer.microsoft.com/microsoft-edge/webview2/>).
+- **Not included:** the installers built by CI and the app itself.
+
 ### SQLite
 The vault file is a SQLite database. SQLite is compiled in through `rusqlite`'s
 `bundled` feature, and it is in the public domain.
