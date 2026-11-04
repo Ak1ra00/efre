@@ -590,7 +590,7 @@ export function installMockBackend(overrides: Partial<MockScenario> = {}): MockB
       return null;
     },
     security_info: () => ({
-      appVersion: "0.1.0",
+      appVersion: "0.1.1",
       formatVersion: 1,
       webauthnApiVersion: scenario.apiVersion,
       vaultPath: VAULT_PATH,

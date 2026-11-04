@@ -1,6 +1,6 @@
 {
   "productName": "efre",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "io.github.ak1ra00.efre",
   "build": {
     "beforeDevCommand": "npm run dev:web",

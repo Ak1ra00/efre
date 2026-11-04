@@ -1015,7 +1015,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "efre"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "arboard",
  "efre-authn",
@@ -1035,7 +1035,7 @@ dependencies = [
 
 [[package]]
 name = "efre-authn"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "hmac",
  "minicbor",
@@ -1051,7 +1051,7 @@ dependencies = [
 
 [[package]]
 name = "efre-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chacha20poly1305",
  "efre-authn",

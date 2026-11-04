@@ -15,10 +15,10 @@ secrets in it until you have finished these checks.
 
 ## 1. Install
 1. Open https://github.com/Ak1ra00/efre/releases/latest.
-2. Download `efre_0.1.0_x64-setup.exe` and `SHA256SUMS.txt`.
-3. In PowerShell, run `(Get-FileHash .\efre_0.1.0_x64-setup.exe -Algorithm SHA256).Hash`.
+2. Download `efre_0.1.1_x64-setup.exe` and `SHA256SUMS.txt`.
+3. In PowerShell, run `(Get-FileHash .\efre_0.1.1_x64-setup.exe -Algorithm SHA256).Hash`.
    It must match the line in `SHA256SUMS.txt`.
-4. Run `efre_0.1.0_x64-setup.exe`.
+4. Run `efre_0.1.1_x64-setup.exe`.
    - SmartScreen will warn, because the installer isn't code-signed yet. Choose
      **More info → Run anyway**.
    - It installs for your user only. There should be **no administrator prompt**.
