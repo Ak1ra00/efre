@@ -1004,9 +1004,10 @@ Things to know:
     - `Get-NetTCPConnection` or `Get-NetUDPEndpoint`, sampled twice a second, shows
       any socket owned by efre or by those processes, loopback included. Each
       observation names the owning process type;
-    - the window, read through UI Automation, shows "efre couldn't start", meaning
-      its IPC failed. One of efre's screen headings confirms the page and IPC work.
-      If UI Automation can't read the window on the runner, that is a warning;
+    - the window, read through UI Automation, doesn't show one of efre's screen
+      headings, such as "Welcome to efre" on a fresh runner. That confirms the page
+      loads and its IPC works under the hardening and the host resolver rule.
+      "efre couldn't start" is reported as an IPC failure;
     - `Get-ProcessMitigation` reports an image-load policy as `OFF`;
     - the per-user WER exclusion value is missing.
 

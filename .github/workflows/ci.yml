@@ -305,7 +305,7 @@ jobs:
             $problems.Add("the window shows '$startupError': its IPC failed")
           } elseif (-not $uiHeading) {
             $why = if ($uiNote) { $uiNote } elseif (-not $uiWindow) { 'UI Automation did not find the window' } else { "UI Automation saw: $(($uiNames | Select-Object -First 12) -join ' | ')" }
-            Write-Host "::warning::no efre screen heading was confirmed. $why"
+            $problems.Add("no efre screen heading appeared in the window. $why")
           }
           # Image-load policy (hardening.rs): fail only on an explicit OFF, so a different
           # cmdlet output format is a warning rather than a false failure.
