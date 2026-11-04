@@ -78,12 +78,13 @@ compile the mock (§11).
 | A8 | Network attacker | Not applicable: efre makes no connections, and CI checks for this (§10). |
 | A9 | A supply-chain attacker (a malicious crate or npm package) | Reduced by a minimal dependency set, `cargo-deny` and `cargo-audit` in CI, lockfiles, a strict CSP, no network-capable Tauri plugins, blocked navigation, and secrets kept out of JS. A malicious *Rust* dependency is game over, so every crate is justified in §12. |
 
-### 3.3 Honest limits (summary; `SECURITY.md` in phase 5 will be the user-facing version)
+### 3.3 Honest limits (summary; `SECURITY.md` is the user-facing version)
 - Whole-file rollback is undetectable, as are copies made before a key was removed (A3).
 - Decrypted item metadata lives in ordinary Rust memory while unlocked (zeroized on lock) and in the WebView's JS heap, which cannot be zeroized; on lock the webview document is discarded. The OS may page that memory to `pagefile.sys`. Only key pages are `VirtualLock`ed. Use BitLocker.
 - Values copied to the clipboard are handed to Windows. efre clears them, but cannot erase copies held by other processes or the freed system memory.
 - `contentProtected` (`WDA_EXCLUDEFROMCAPTURE`) blocks screenshots and screen recording through the normal capture APIs. It does not block cameras, kernel-mode capture, some remote-desktop or virtualisation paths, or accessibility APIs.
 - SSD wear-levelling means "secure_delete" cannot guarantee that old ciphertext is physically erased.
+- efre is excluded from Windows Error Reporting, but WebView2's own processes are not. They keep their own crash dumps in `%LOCALAPPDATA%\efre\webview`, which can hold fragments of what the window showed (§8.1).
 - The Windows Security dialog, webauthn.dll, the WebView2 runtime and the YubiKey firmware are trusted.
 
 ## 4. YubiKey integration (Windows WebAuthn API)
@@ -95,10 +96,13 @@ provides the PIN/fingerprint UI ("Windows Security" dialog). efre never asks
 for admin rights.
 
 ### 4.2 Loading
-- At process start: `SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)`.
-  This removes the current directory and `PATH` from the DLL search for the
-  whole process. It cannot be `SYSTEM32` only, because WebView2 loads DLLs from
-  its runtime folder.
+- At process start: `SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)`
+  (§8.1). This removes the current directory, `%windir%` and `PATH` from the DLL
+  search for the whole process. It keeps efre's own folder, which holds no DLLs,
+  and folders added with `AddDllDirectory`, rather than System32 alone, because
+  third-party code that loads into efre (IMEs, accessibility tools) may add its
+  own folder that way. WebView2 is unaffected either way: its loader uses
+  absolute paths and System32 (§8.1).
 - `webauthn.dll` is loaded explicitly with
   `LoadLibraryExW("webauthn.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32)`, and
   every function is resolved with `GetProcAddress`. efre never links
@@ -643,16 +647,99 @@ efre locks immediately if no YubiKey is present.
 ## 8. Process and memory hardening (src-tauri)
 
 ### 8.1 At startup, before any window exists
-- `SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)` (§4.2).
-- `SetProcessMitigationPolicy`: image-load policy (`NoRemoteImages`,
-  `NoLowMandatoryLabelImages`, `PreferSystem32Images`) and strict handle
-  checks. Others are evaluated in phase 5; for example, extension-point disable
-  would break IMEs.
-- `WerAddExcludedApplication(<exe name>, FALSE)` (per user, no admin), plus
-  `SetErrorMode(SEM_NOGPFAULTERRORBOX)`.
-- The release profile uses `panic = "abort"`. A panic never prints secret data,
-  because secret types have no `Display`.
-- `tauri-plugin-single-instance`: a second launch focuses the existing window.
+`src-tauri/src/hardening.rs` runs first in `main()`. At that point efre is still
+single-threaded, and Tauri has not yet created a window or loaded WebView2.
+
+Every step is best effort. A step that Windows refuses never stops efre. Settings ›
+Security then lists that step as a limit, with Windows' reason, instead of as a
+protection. This is the same rule as for the lock triggers (§8.5).
+
+| Step | Call | Notes |
+|---|---|---|
+| Crash dialogs | `SetErrorMode(GetErrorMode() \| SEM_FAILCRITICALERRORS \| SEM_NOGPFAULTERRORBOX)` | Turns off the crash dialog, which would keep a crashed efre, and its memory, alive until dismissed. Also turns off the "insert a disk" dialog. Verified with `GetErrorMode`. Child processes inherit the mode. WebView2's processes keep it; Explorer, started by "Open vault folder", gets `CREATE_DEFAULT_ERROR_MODE`. |
+| DLL search | `SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)` | See §4.2 and below. |
+| Image loads | `SetProcessMitigationPolicy(ProcessImageLoadPolicy)` with `NoRemoteImages`, `NoLowMandatoryLabelImages` and `PreferSystem32Images` | If Windows rejects the set, efre retries without `PreferSystem32Images`. The reported outcome is what `GetProcessMitigationPolicy` says is enforced, so a policy an administrator already applies through Exploit Protection also counts. |
+| Crash reports | `WerAddExcludedApplication(<exe file name>, FALSE)` | Per user, so no admin is needed. It writes `HKCU\Software\Microsoft\Windows\Windows Error Reporting\ExcludedApplications\efre.exe` on every start. The uninstaller removes it (§9). |
+| WebView2 overrides | Delete every `WEBVIEW2_*` environment variable | See §10. |
+
+The release profile uses `panic = "abort"`. A Rust abort is a fail-fast exception,
+which goes straight to Windows Error Reporting, hence the exclusion. A panic never
+prints secret data, because secret types have no `Display`.
+
+`tauri-plugin-single-instance` means a second launch focuses the existing window.
+
+**WebView2 still works under these policies; this was checked, not assumed.**
+- efre links the WebView2 loader statically, as `WebView2LoaderStatic.lib` from
+  `webview2-com-sys` 0.39.1. The disassembled loader shows two kinds of load:
+  - It loads its helpers with `LoadLibraryExW(…, LOAD_LIBRARY_SEARCH_SYSTEM32)`.
+    The helpers are `advapi32.dll`, `version.dll` or
+    `api-ms-win-core-version-l1-1-0.dll`, and `shell32.dll`.
+  - It loads the runtime's `EBWebView\x64\EmbeddedBrowserWebView.dll` with
+    `LoadLibraryW(<absolute path>)`.
+- Neither load depends on the current folder or `PATH`, and an absolute path is not
+  searched at all. So neither `SetDefaultDllDirectories` nor `PreferSystem32Images`
+  changes what WebView2 loads.
+- WebView2's browser, renderer and GPU processes are separate `msedgewebview2.exe`
+  processes. They don't inherit DLL directories or mitigation policies that efre
+  sets at runtime.
+- The CI smoke test (§11) checks that WebView2 starts under these policies.
+
+**Other code in efre's process.**
+- `SetDefaultDllDirectories` removes the current folder, `%windir%` and `PATH` from
+  DLL searches. Two kinds of code would break:
+  - code that found its DLLs in those folders;
+  - code that calls `LoadLibraryEx` with `LOAD_WITH_ALTERED_SEARCH_PATH` and a
+    *relative* name. Microsoft documents this as undefined, and it fails once
+    default directories are set.
+
+  The only candidates in efre's process are third-party IMEs and text services, and
+  accessibility or security tools that inject DLLs. Those load by absolute path,
+  and System32 is still searched. Tauri, tao, wry and muda load only System32 DLLs
+  by name.
+- `PreferSystem32Images` only reorders a search: a DLL found in System32 wins over a
+  copy with the same name elsewhere. efre ships no DLLs. Firefox enables this
+  policy in its browser process, and Chromium's sandbox applies the same image-load
+  policy at runtime.
+- "Open vault folder" starts `%SystemRoot%\explorer.exe` as a separate process,
+  without `ShellExecute`, so no shell extension loads into efre.
+- DLLs that `efre.exe` imports statically are resolved before `main()`, with the
+  application folder searched first. Examples are `wer.dll`, `wtsapi32.dll`,
+  `cfgmgr32.dll` and `powrprof.dll`. The application folder is the user's own (§9),
+  and anything that can write there can replace `efre.exe` itself (A7). Firefox
+  documents the same position.
+
+**Not enabled, and why.**
+- **Strict handle checks** (`ProcessStrictHandleCheckPolicy`). This turns any use of
+  an invalid handle, by any code in the process, into a crash, and it can't be
+  turned off again.
+  - Third-party code that loads into efre would then crash the vault on a harmless
+    stale-handle bug. That code includes WebView2's client DLL, IMEs and text
+    services, and accessibility and security tools.
+  - The policy defends against handle-confusion exploits driven by hostile input,
+    and efre's process handles almost none. The vault is authenticated before use,
+    and web content runs in WebView2's own processes.
+
+  Reliability wins here.
+- **Extension-point disable** blocks legacy IMEs, AppInit DLLs and the global hooks
+  that accessibility tools use.
+- **Dynamic code (ACG)** and **Microsoft-signed images only** break IMEs, and
+  accessibility or security tools, that load into the process or generate code.
+- **Child-process policy** is impossible: WebView2 and Explorer are child processes.
+- **Win32k system-call disable** is impossible for a GUI process.
+- DEP, ASLR (high-entropy, bottom-up) and heap termination on corruption are already
+  on for 64-bit Rust executables. There is nothing to set.
+
+**What the WER exclusion doesn't cover.**
+- **WebView2's processes.** `msedgewebview2.exe` is a shared system binary, and WER
+  excludes by file name, so excluding it would affect every app's WebView2.
+  - WebView2 writes minidumps of its own crashed processes into its failure-report
+    folder, inside its user-data folder (`%LOCALAPPDATA%\efre\webview`).
+  - Those dumps can hold fragments of what the window showed, such as item metadata
+    or a revealed field.
+
+  Settings › Security lists this as a limit.
+- **Crash-dump collection an administrator sets up**, such as WER `LocalDumps` or a
+  postmortem debugger. This is out of scope (A7).
 
 ### 8.2 Decrypted data in memory
 - On unlock efre decrypts every record once and keeps only a **metadata index**
@@ -697,9 +784,20 @@ efre locks immediately if no YubiKey is present.
 | YubiKey unplugged | `CM_Register_Notification` on `GUID_DEVINTERFACE_HID` (`efre_authn::presence_windows::PresenceWatcher`). Each arrival or removal re-enumerates present HID interfaces (`CM_Get_Device_Interface_List`) and looks for `VID_1050` as a whole token of the hardware id. efre locks when none remain (see §6.7). Only changes are reported, and a failed enumeration counts as "no YubiKey". No device is opened, so no admin is needed. |
 | Ctrl+L / quit | Direct |
 
-If the unplug watcher or the sleep/session watcher cannot start on a given PC, efre
-keeps running, and Settings › Security lists that trigger as unavailable. Phase 5
-revisits whether a missing trigger should stop efre instead.
+If the unplug watcher or the sleep/session watcher can't start on a given PC, efre
+keeps running. Settings › Security lists that trigger as unavailable, with Windows'
+reason.
+
+**Decision (phase 5): keep running.**
+- These triggers protect an unlocked session. The vault at rest depends only on the
+  cryptography (§5), and a missing watcher doesn't weaken it.
+- Refusing to start would turn a Windows hiccup into a lockout from your own data,
+  with no way around it. One example is Remote Desktop Services not yet running at
+  sign-in, which the session watcher already retries.
+- The vault can always be locked: the idle timer runs inside efre, and Ctrl+L always
+  works. You can also see exactly which trigger is missing.
+
+The startup hardening steps follow the same rule (§8.1).
 
 ### 8.6 Screenshot blocking
 Every window is `contentProtected: true`, which maps to
@@ -742,19 +840,48 @@ See §3.3 for what it doesn't block.
     default context menu are switched off through the WebView2 settings object.
     Print or Save as would otherwise write plaintext to disk. Copy and paste
     still work in text fields.
-  - A Mica backdrop is optional and decided in phase 5.
+  - **No Mica backdrop (decided in phase 5).** The brief lists Mica as optional,
+    and it adds DWM and transparency code for no security value:
+    - Mica needs a transparent window and webview instead of the opaque #0e0f11
+      background that prevents a white flash.
+    - It exists only on Windows 11 22H2 and later (`DWMWA_SYSTEMBACKDROP_TYPE`),
+      and needs a different fallback elsewhere.
+    - Its interaction with `WDA_EXCLUDEFROMCAPTURE` and the dark title bar would
+      need testing on every target.
 - **Installer:** NSIS with `installMode: currentUser`, so no admin.
   `webviewInstallMode: skip`, because WebView2 ships with Windows 11 and the
   bootstrapper would download. The installer is unsigned for now.
-  - Tauri's per-user NSIS installer defaults to `%LOCALAPPDATA%\<productName>`,
-    which is the vault folder. The vault is never at risk, as checked against
-    the tauri-bundler 2.10 template: its uninstaller deletes only its own files,
-    removes the folder only if it is empty (`RMDir` without `/r`), and its
-    "delete app data" option removes `%LOCALAPPDATA%\<bundle id>`, not
-    `%LOCALAPPDATA%\efre`.
-  - Phase 5 moves the default install directory to
-    `%LOCALAPPDATA%\Programs\efre` (NSIS hook or template), so binaries and the
-    vault don't share a folder.
+  - The installer puts efre in `%LOCALAPPDATA%\Programs\efre`, Windows' folder for
+    per-user programs. The template's default, `%LOCALAPPDATA%\<productName>`, is
+    the vault folder, so the binaries and the vault would otherwise share a folder.
+  - `src-tauri/windows/installer-hooks.nsh` does this without a custom template
+    (`bundle.windows.nsis.installerHooks`). It was checked against the
+    tauri-bundler 2.10.4 template inside `@tauri-apps/cli` 2.12.4, and it compiles
+    with `makensis -WX`:
+    - The template's `.onInit` sets `$INSTDIR` to `$LOCALAPPDATA\efre` unless `/D=`
+      was given. `RestorePreviousInstallLocation` then replaces it with the
+      previous install location from `HKCU\Software\<publisher>\efre`.
+    - Modern UI's `.onGUIInit` (`MUI_CUSTOMFUNCTION_GUIINIT`) replaces
+      `$LOCALAPPDATA\efre` with `$LOCALAPPDATA\Programs\efre`, before the
+      directory page shows it.
+    - `NSIS_HOOK_PREINSTALL` does the same, before any file is copied. This covers
+      silent installs, which skip `.onGUIInit`, and the vault folder typed into the
+      directory page.
+    - `NSIS_HOOK_POSTINSTALL` handles an install over an earlier build that lived in
+      the vault folder. It deletes exactly that build's `efre.exe` and
+      `uninstall.exe` there and retargets its desktop shortcut. The template
+      already recreates the Start menu shortcut.
+  - The vault is never at risk from the uninstaller:
+    - It deletes only its own files in the install folder, and removes that folder
+      only if it is empty (`RMDir` without `/r`).
+    - Its "delete app data" option removes `%LOCALAPPDATA%\<bundle id>` and
+      `%APPDATA%\<bundle id>`, not `%LOCALAPPDATA%\efre`.
+    - `NSIS_HOOK_POSTUNINSTALL` removes efre's per-user WER exclusion value (§8.1),
+      except during an update.
+  - The `webview` folder in `%LOCALAPPDATA%\efre` holds WebView2's cache and no
+    vault data. The uninstaller leaves it; delete it by hand if you like.
+  - CI installs silently, checks the location, uninstalls, and checks that a
+    stand-in `vault.efre` is unchanged (§11).
 
 ## 10. Network isolation
 - **Rust:** no HTTP/TLS/WebSocket client crates. `deny.toml` bans
@@ -778,13 +905,66 @@ See §3.3 for what it doesn't block.
     `--disable-client-side-phishing-detection` and `--no-first-run`.
   - SmartScreen and reputation checks are off, as are autofill and password
     autosave.
+  - The WebView2 loader and runtime read `WEBVIEW2_*` environment variables,
+    which override or extend an app's own settings. For example:
+    - `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, which
+      developers set for debugging, would open a debugging socket into efre's
+      window;
+    - `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` swaps in another runtime.
+
+    efre deletes every `WEBVIEW2_*` variable from its own environment at startup
+    (§8.1), so neither its loader nor its WebView2 processes see them. The
+    equivalent policy values under `Software\Policies\Microsoft\Edge\WebView2` need
+    admin to write (A7).
   - These are best effort. WebView2 runtime updates are done by Edge Update,
     outside efre's process.
-- **Verification:** the checklists include a zero-outbound-connections check
-  on your PC. Run Resource Monitor's Network tab, or `Get-NetTCPConnection`
-  and `Get-NetUDPEndpoint`, for `efre.exe` and its `msedgewebview2.exe`
-  children during unlock, browse, copy and lock. An optional Windows Firewall
-  outbound block rule for `efre.exe` is described in phase 5.
+- **Verification:**
+  - CI starts the release `efre.exe` and fails if it, or a WebView2 process in its
+    data folder, opens any TCP or UDP socket (§11).
+  - The checklists include a zero-outbound-connections check on your PC. Run
+    Resource Monitor's Network tab, or `Get-NetTCPConnection` and
+    `Get-NetUDPEndpoint`, for `efre.exe` and its `msedgewebview2.exe` children
+    during unlock, browse, copy and lock.
+
+### 10.1 Optional: a Windows Firewall rule (your choice; needs admin)
+efre never needs admin rights, and it doesn't need this rule. If you also want
+Windows to enforce "no network" for `efre.exe`, add an outbound block rule. Adding a
+firewall rule needs an administrator PowerShell.
+
+1. In a normal PowerShell window, signed in as yourself, print efre's path:
+   ```powershell
+   Join-Path $env:LOCALAPPDATA 'Programs\efre\efre.exe'
+   ```
+2. Open PowerShell with **Run as administrator** and create the rule with that
+   exact path:
+   ```powershell
+   New-NetFirewallRule -DisplayName 'efre: block outbound' -Direction Outbound `
+     -Program 'C:\Users\<you>\AppData\Local\Programs\efre\efre.exe' `
+     -Action Block -Profile Any
+   ```
+   Type the literal path rather than `$env:LOCALAPPDATA`. An administrator window
+   may run as another account, and the firewall service would expand
+   `%LOCALAPPDATA%` for itself, not for you.
+3. To check the rule, or to remove it again:
+   ```powershell
+   Get-NetFirewallRule -DisplayName 'efre: block outbound' | Get-NetFirewallApplicationFilter
+   Remove-NetFirewallRule -DisplayName 'efre: block outbound'
+   ```
+
+Things to know:
+- The rule covers `efre.exe` only. efre's window is drawn by WebView2's
+  `msedgewebview2.exe` processes, so the rule doesn't cover them.
+  - `msedgewebview2.exe` is a shared system binary in
+    `C:\Program Files (x86)\Microsoft\EdgeWebView\Application\<version>\`.
+  - Teams, Outlook, Widgets and many other apps use it, so a rule for it would
+    block all of them.
+  - Its path changes with every runtime update, so such a rule would stop matching.
+
+  efre therefore doesn't suggest a rule for WebView2. For WebView2, efre relies on
+  the CSP, blocked navigation, its browser arguments and the zero-socket checks.
+- A block rule wins over allow rules. It applies only while Microsoft Defender
+  Firewall is on; a third-party firewall has its own rules.
+- If you install efre somewhere else, point the rule at that `efre.exe`.
 
 ## 11. Build, test, CI
 - **Mock gating:**
@@ -803,6 +983,22 @@ See §3.3 for what it doesn't block.
   - `tsc --noEmit`, `eslint`, `vitest run`
   - the mock-exclusion check
   - an unsigned `tauri build` (NSIS) uploaded as an artifact
+  - a smoke test of that build (phase 5). The release `efre.exe` runs for 20 s, and
+    the step fails if:
+    - efre exits;
+    - no `msedgewebview2.exe` with `\efre\webview` in its command line appears, which
+      means WebView2 didn't start under the §8.1 policies;
+    - `Get-NetTCPConnection` or `Get-NetUDPEndpoint`, sampled twice a second, shows
+      any socket owned by efre or by those processes;
+    - `Get-ProcessMitigation` reports an image-load policy as `OFF`;
+    - the per-user WER exclusion value is missing.
+
+    Without a usable `webauthn.dll`, the app shows its "unsupported" screen and
+    keeps running, which is enough for this test.
+  - an installer test. A silent install must land in `%LOCALAPPDATA%\Programs\efre`,
+    with nothing in `%LOCALAPPDATA%\efre`. A silent uninstall must then leave a
+    stand-in `vault.efre` byte-identical, keep the `webview` folder, and remove
+    the WER exclusion value.
 
   An extra `ubuntu-latest` job runs the `efre-core` and `efre-authn` tests to
   prove they are platform-independent.
@@ -872,7 +1068,7 @@ published.
 | `rusqlite` (`bundled`) | 0.41 | core | SQLite storage with a pinned engine |
 | `minicbor` (+ derive) | 2.x | core, authn | Record payload encoding, and parsing the CBOR in authData and attestation. One small no_std codec instead of two. Licensed BlueOak-1.0.0 (permissive, OSI-approved; allowed in `deny.toml`). |
 | `thiserror` | 2 | all | Error enums. They never carry secret data. |
-| `windows` | 0.62 | authn, app | Win32 bindings: WebAuthn types, `LoadLibraryExW`, windows/power/session/device notifications, WER, clipboard sequence, `VirtualLock` |
+| `windows` | 0.62 | authn, app | Win32 bindings: WebAuthn types, `LoadLibraryExW`, windows/power/session/device notifications, clipboard sequence, `VirtualLock`, and the startup hardening (error mode, DLL directories, image-load policy, WER exclusion, environment) |
 | `rustls-webpki` (+ `ring`) | 0.103 | authn | X.509 path validation for YubiKey attestation, and ES256 signature verification. This is a widely deployed, well-reviewed verifier; we don't hand-write chain validation. It is pure verification with no network, revocation or TLS (`rustls` itself stays banned). It accepts a real YubiKey 5Ci attestation under its normal rules. The one customisation is that EKU is not required. |
 | `rustls-pki-types` | 1.15 | authn | Certificate and time types for rustls-webpki, without default features. It is already in the graph through rustls-webpki. |
 | `arboard` | 3.7 | app | Clipboard with Windows history/cloud/monitoring exclusions |
@@ -911,7 +1107,8 @@ crates/efre-authn/      Authenticator trait; authdata.rs, attestation.rs + roots
                         clientdata.rs, hresult.rs; windows/ (cfg(windows) WebAuthn driver);
                         presence.rs + presence_windows.rs; mock.rs (feature "mock")
 crates/efre-core/examples/hardware_check.rs   Windows hardware test tool (phase 3)
-src-tauri/              Tauri app (crate "efre")
+src-tauri/              Tauri app (crate "efre"); src/hardening.rs = startup hardening (§8.1)
+src-tauri/windows/installer-hooks.nsh   NSIS hooks: per-user install folder (§9)
 src/                    React frontend
 docs/                   SPEC.md, ARCHITECTURE.md, HARDWARE_TESTS.md
 deny.toml               cargo-deny policy
