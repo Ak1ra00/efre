@@ -328,7 +328,7 @@ function PasswordOptionsForm({
       />
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-3 text-[13px] font-medium text-fg-muted">Characters</legend>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           {CLASSES.map((c) => (
             <SwitchRow
               key={c.key}
@@ -392,7 +392,7 @@ function PassphraseOptionsForm({
           />
         )}
       </Field>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3">
         <SwitchRow
           label="Capitalize words"
           sample="Word"

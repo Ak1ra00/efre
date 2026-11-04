@@ -61,7 +61,8 @@ function StepFrame({ headingRef, title, description, top, children, secondary, p
         )}
       >
         {secondary === undefined ? null : <div className="flex flex-col gap-2 sm:flex-row">{secondary}</div>}
-        <div className="flex flex-col gap-2 sm:flex-row">{primary}</div>
+        {/* Narrow windows stack the main button (last) on top. */}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">{primary}</div>
       </footer>
     </section>
   );
