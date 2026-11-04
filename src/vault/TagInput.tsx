@@ -142,7 +142,7 @@ export function TagInput({
         }}
         onKeyDown={onKeyDown}
         onPaste={onPaste}
-        className="h-6 min-w-28 flex-1 bg-transparent px-1 text-sm text-fg outline-none placeholder:text-fg-subtle"
+        className="h-6 min-w-28 flex-1 bg-transparent px-1 text-sm text-fg outline-none placeholder:text-fg-subtle [&::-webkit-calendar-picker-indicator]:hidden"
       />
       {available.length === 0 ? null : (
         <datalist id={listId}>

@@ -128,7 +128,7 @@ function EditorForm({ initial, itemId }: { initial: FormState; itemId: string | 
   const [saving, setSaving] = useState(false);
   const [tagProblemText, setTagProblem] = useState<string | null>(null);
   const [revealedInputs, setRevealedInputs] = useState<ReadonlySet<string>>(() => new Set());
-  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const lastAdded = useRef<string | null>(null);
   const nextKey = useRef(0);
   const titleRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -150,8 +150,8 @@ function EditorForm({ initial, itemId }: { initial: FormState; itemId: string | 
     },
     [actions],
   );
-  // Focus moves on the next task: the menu that opened the editor (or added the field)
-  // must close first, or its focus trap would pull focus straight back.
+  // Start in the title. (When a menu opened the editor, the menu moves focus here again
+  // once it has closed: see NewItemMenu.)
   useEffect(() => {
     const timer = setTimeout(() => {
       titleRef.current?.focus();
@@ -160,15 +160,13 @@ function EditorForm({ initial, itemId }: { initial: FormState; itemId: string | 
       clearTimeout(timer);
     };
   }, []);
-  useEffect(() => {
-    if (focusKey === null) return;
-    const timer = setTimeout(() => {
-      formRef.current?.querySelector<HTMLElement>(`[data-field-key="${focusKey}"] [data-autofocus]`)?.focus();
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [focusKey]);
+  /** After "Add field" closes: the new field's label. */
+  const focusAddedField = () => {
+    const key = lastAdded.current;
+    if (key === null) return;
+    lastAdded.current = null;
+    formRef.current?.querySelector<HTMLElement>(`[data-field-key="${key}"] [data-autofocus]`)?.focus();
+  };
 
   const update = (key: string, patch: Partial<FormField>) => {
     setForm((f) => ({ ...f, fields: f.fields.map((field) => (field.key === key ? { ...field, ...patch } : field)) }));
@@ -197,7 +195,7 @@ function EditorForm({ initial, itemId }: { initial: FormState; itemId: string | 
         { key, id: null, label: "", kind: fieldKind, role: null, value: "", original: null, changing: false },
       ],
     }));
-    setFocusKey(key);
+    lastAdded.current = key;
   };
   const toggleRevealed = (key: string) => {
     setRevealedInputs((current) => {
@@ -288,6 +286,7 @@ function EditorForm({ initial, itemId }: { initial: FormState; itemId: string | 
                 <Input
                   {...p}
                   ref={titleRef}
+                  data-initial-focus
                   value={form.title}
                   required
                   placeholder={`Name this ${kind.noun}`}
@@ -306,7 +305,7 @@ function EditorForm({ initial, itemId }: { initial: FormState; itemId: string | 
               <h3 id={fieldsHeadingId} className="text-[13px] font-medium text-fg-muted">
                 Fields
               </h3>
-              <AddFieldMenu disabled={form.fields.length >= ITEM_LIMITS.fields} onAdd={addField} />
+              <AddFieldMenu disabled={form.fields.length >= ITEM_LIMITS.fields} onAdd={addField} onClosed={focusAddedField} />
             </div>
             {form.fields.length === 0 ? (
               <p className="rounded-lg border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-fg-subtle">
@@ -375,7 +374,16 @@ function EditorForm({ initial, itemId }: { initial: FormState; itemId: string | 
   );
 }
 
-function AddFieldMenu({ disabled, onAdd }: { disabled: boolean; onAdd: (kind: FieldKind) => void }) {
+function AddFieldMenu({
+  disabled,
+  onAdd,
+  onClosed,
+}: {
+  disabled: boolean;
+  onAdd: (kind: FieldKind) => void;
+  /** After a field was added and the menu has gone: focus the new field. */
+  onClosed: () => void;
+}) {
   const added = useRef(false);
   return (
     <DropdownMenu>
@@ -388,9 +396,12 @@ function AddFieldMenu({ disabled, onAdd }: { disabled: boolean; onAdd: (kind: Fi
       <DropdownMenuContent
         align="end"
         onCloseAutoFocus={(event) => {
-          // Focus goes to the new field's label instead.
-          if (added.current) event.preventDefault();
+          // Focus goes to the new field's label instead of this button (only now that
+          // the menu is gone, or its focus trap would take it back).
+          if (!added.current) return;
           added.current = false;
+          event.preventDefault();
+          onClosed();
         }}
       >
         <DropdownMenuLabel>Field type</DropdownMenuLabel>

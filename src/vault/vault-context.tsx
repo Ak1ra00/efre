@@ -48,6 +48,8 @@ export interface VaultActions {
   /** Ctrl+F: focus the search field (its text selected unless `selectAll` is false). */
   focusSearch: (options?: { selectAll?: boolean }) => void;
   focusList: () => void;
+  /** Focus the open editor's first field (after a menu that opened it has closed). */
+  focusEditor: () => void;
   startCreate: (kind: ItemKind) => void;
   startEdit: (id: string) => void;
   /** Cancel (asks first if there are unsaved changes). */
@@ -177,11 +179,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       pendingFocus.current = null;
       return;
     }
-    const element = elementFor(request.target);
+    let element = elementFor(request.target);
+    // The editor's first field; while an item is still loading for editing, keep waiting.
+    if (request.target === "editor") element = element?.querySelector<HTMLElement>("[data-initial-focus]") ?? null;
     if (element === null) return;
     pendingFocus.current = null;
-    // The editor focuses its own first field when it mounts.
-    if (request.target !== "editor") focusElement(request.target, element);
+    focusElement(request.target, element);
   }
 
   const [actions] = useState<VaultActions>(() => {
@@ -292,6 +295,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           return;
         }
         focusSoon(target);
+      },
+      focusEditor: () => {
+        focusSoon("editor");
       },
       focusList: () => {
         focusSoon("list");

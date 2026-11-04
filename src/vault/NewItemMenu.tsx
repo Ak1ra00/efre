@@ -51,9 +51,12 @@ export function NewItemMenu({ compact }: { compact: boolean }) {
         side={compact ? "right" : "bottom"}
         className={cn(compact ? "min-w-48" : "w-(--radix-dropdown-menu-trigger-width)")}
         onCloseAutoFocus={(event) => {
-          // The editor puts focus in its first field; don't pull it back to this button.
-          if (chose.current) event.preventDefault();
+          // Focus goes to the new item's first field, not back to this button. Doing it
+          // here, once the menu is gone, keeps the menu's focus trap from taking it back.
+          if (!chose.current) return;
           chose.current = false;
+          event.preventDefault();
+          actions.focusEditor();
         }}
         onKeyDown={(event) => {
           // 1–5 pick a kind directly (the hints on the right).
