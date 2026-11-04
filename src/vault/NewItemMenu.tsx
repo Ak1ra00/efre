@@ -1,0 +1,101 @@
+import { Plus } from "lucide-react";
+import { useRef } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { KbdCombo } from "@/components/ui/kbd";
+import { Tip } from "@/components/ui/tooltip";
+import { ITEM_KIND_ORDER, ITEM_KINDS } from "@/lib/items";
+import { cn } from "@/lib/utils";
+
+import { useVault } from "./vault-context";
+
+/**
+ * True when nothing in particular has focus: it fell back to the page when the menu that
+ * had it went away. (If the user already moved on, say into another menu, leave it.)
+ */
+export function focusIsFree(): boolean {
+  const active = document.activeElement;
+  return active === null || active === document.body;
+}
+
+/**
+ * "New item" with the kind choice. Ctrl+N opens it (the menu is controlled by the vault
+ * state), so there is exactly one of these on screen: in the sidebar or the icon rail.
+ */
+export function NewItemMenu({ compact }: { compact: boolean }) {
+  const { newMenuOpen, actions } = useVault();
+  const chose = useRef(false);
+
+  const trigger = compact ? (
+    <Button variant="primary" size="icon" aria-label="New item" aria-keyshortcuts="Control+N">
+      <Plus aria-hidden="true" />
+    </Button>
+  ) : (
+    <Button variant="primary" className="w-full justify-start px-2.5" aria-keyshortcuts="Control+N">
+      <Plus aria-hidden="true" />
+      New item
+      <KbdCombo combo="Ctrl+N" className="ml-auto [&_kbd]:border-accent-fg/20 [&_kbd]:bg-accent-fg/10 [&_kbd]:text-accent-fg" />
+    </Button>
+  );
+
+  return (
+    <DropdownMenu modal={false} open={newMenuOpen} onOpenChange={actions.setNewMenuOpen}>
+      {compact ? (
+        <Tip label="New item" shortcut="Ctrl+N" side="right">
+          <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+        </Tip>
+      ) : (
+        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      )}
+      <DropdownMenuContent
+        align="start"
+        side={compact ? "right" : "bottom"}
+        className={cn(compact ? "min-w-48" : "w-(--radix-dropdown-menu-trigger-width)")}
+        onCloseAutoFocus={(event) => {
+          // Focus goes to the new item's first field, not back to this button. Doing it
+          // here, once the menu is gone, keeps the menu's focus trap from taking it back.
+          if (!chose.current) return;
+          chose.current = false;
+          event.preventDefault();
+          // Unless the user has already moved on (e.g. clicked into the editor).
+          if (focusIsFree()) actions.focusEditor();
+        }}
+        onKeyDown={(event) => {
+          // 1–5 pick a kind directly (the hints on the right).
+          const kind = /^[1-9]$/.test(event.key) ? ITEM_KIND_ORDER[Number(event.key) - 1] : undefined;
+          if (kind === undefined || event.ctrlKey || event.altKey || event.metaKey) return;
+          event.preventDefault();
+          chose.current = true;
+          actions.setNewMenuOpen(false);
+          actions.startCreate(kind);
+        }}
+      >
+        <DropdownMenuLabel>New item</DropdownMenuLabel>
+        {ITEM_KIND_ORDER.map((kind, index) => {
+          const { icon: Icon, label } = ITEM_KINDS[kind];
+          return (
+            <DropdownMenuItem
+              key={kind}
+              onSelect={() => {
+                chose.current = true;
+                actions.startCreate(kind);
+              }}
+            >
+              <Icon aria-hidden="true" />
+              {label}
+              <DropdownMenuShortcut combo={String(index + 1)} className="[&_kbd]:min-w-5" />
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
