@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 330" width="880" height="330" role="img" aria-labelledby="t d">
+  <title id="t">Two keys, one vault</title>
+  <desc id="d">Your primary and backup YubiKeys each open the same vault. If you lose one, unlock with the other, remove the lost key in Settings, and efre re-encrypts everything under a new vault key so the lost key opens nothing new.</desc>
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8b93ff"/>
+    </marker>
+    <style>
+      .h { font: 600 17px "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif; fill: #ececf1; }
+      .nt { font: 600 14.5px "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif; fill: #ececf1; }
+      .nl { font: 400 12.5px "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif; fill: #a3a6b0; }
+      .num { font: 600 13px "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif; fill: #0c0d10; }
+      .node { fill: #17181d; stroke: #30333a; stroke-width: 1; }
+      .vault { fill: #17181d; stroke: #8b93ff; stroke-width: 1.5; }
+      .wire { stroke: #8b93ff; stroke-width: 1.5; fill: none; }
+      .icon { stroke: #a7adff; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="879" height="329" rx="14" fill="#0c0d10" stroke="#25272d"/>
+  <path d="M430 32 V298" stroke="#25272d"/>
+
+  <!-- Panel A -->
+  <text class="h" x="40" y="52">Two keys, one vault</text>
+
+  <rect class="node" x="40" y="84" width="170" height="70" rx="10"/>
+  <g class="icon" transform="translate(56 106)"><rect x="0" y="4" width="26" height="14" rx="4"/><rect x="26" y="7" width="6" height="8" rx="1"/><circle cx="9" cy="11" r="3"/></g>
+  <text class="nt" x="100" y="115">Key 1</text>
+  <text class="nl" x="100" y="134">primary, on you</text>
+
+  <rect class="node" x="40" y="184" width="170" height="70" rx="10"/>
+  <g class="icon" transform="translate(56 206)"><rect x="0" y="4" width="26" height="14" rx="4"/><rect x="26" y="7" width="6" height="8" rx="1"/><circle cx="9" cy="11" r="3"/></g>
+  <text class="nt" x="100" y="215">Key 2</text>
+  <text class="nl" x="100" y="234">backup, kept safe</text>
+
+  <path class="wire" d="M210 119 C 246 119, 250 160, 280 164" marker-end="url(#a2)"/>
+  <path class="wire" d="M210 219 C 246 219, 250 178, 280 174" marker-end="url(#a2)"/>
+
+  <rect class="vault" x="286" y="129" width="124" height="80" rx="10"/>
+  <g class="icon" transform="translate(337 140)"><rect x="2" y="10" width="18" height="13" rx="3"/><path d="M6 10 V7 A5 5 0 0 1 16 7 V10"/></g>
+  <text class="nt" x="348" y="184" text-anchor="middle">Your vault</text>
+  <text class="nl" x="348" y="201" text-anchor="middle">opens with either</text>
+
+  <text class="nl" x="40" y="290">Keep the backup key away from your PC.</text>
+
+  <!-- Panel B -->
+  <text class="h" x="466" y="52">Lost a key?</text>
+
+  <circle cx="478" cy="98" r="12" fill="#8b93ff"/><text class="num" x="478" y="103" text-anchor="middle">1</text>
+  <text class="nt" x="502" y="96">Unlock with the key you still have.</text>
+  <text class="nl" x="502" y="115">The lost key alone is useless: it also needs its PIN.</text>
+
+  <circle cx="478" cy="160" r="12" fill="#8b93ff"/><text class="num" x="478" y="165" text-anchor="middle">2</text>
+  <text class="nt" x="502" y="158">Settings → YubiKeys → Remove.</text>
+  <text class="nl" x="502" y="177">Touch each remaining key once when asked.</text>
+
+  <circle cx="478" cy="222" r="12" fill="#8b93ff"/><text class="num" x="478" y="227" text-anchor="middle">3</text>
+  <text class="nt" x="502" y="220">efre re-encrypts everything.</text>
+  <text class="nl" x="502" y="239">New vault key: the lost key opens nothing new.</text>
+
+  <text class="nl" x="466" y="290">Then add a new backup key and refresh your file backups.</text>
+</svg>
