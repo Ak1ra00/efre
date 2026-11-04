@@ -1,4 +1,4 @@
-# efre — agent guide
+# efre — guide for contributors and coding agents
 
 **efre** (ⵉⴼⵔⵉ, *ifri*: Tamazight for *cave*; plural ⵉⴼⵔⴰⵏ, *ifran*) is an offline, single-user Windows vault that opens only with an enrolled YubiKey. Keep the Tifinagh name in the UI (`src/components/brand/tifinagh.tsx`) and README: it honours the project's Amazigh heritage.
 Read `docs/SPEC.md` (the brief) and `docs/ARCHITECTURE.md` (the design; §5 is normative) before changing anything.
