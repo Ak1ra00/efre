@@ -37,7 +37,7 @@ limits.
 
 | | |
 |---|---|
-| **Windows** | Windows 11, or Windows 10 version 1903 or later, with the latest updates. |
+| **Windows** | Windows 11 with current updates. efre needs Windows' security-key interface (WebAuthn API) at version 4 or later; it has been tested on version 9. Windows 10 works only if its updates reach that version. efre checks at start and says so if Windows is too old. |
 | **WebView2** | Built into Windows 11. On Windows 10 it comes with Microsoft Edge. |
 | **YubiKeys** | Two YubiKeys with FIDO2: YubiKey 5 series, Security Key series, or YubiKey Bio. One works, but you'll be reminded to add a backup. |
 | **A FIDO2 PIN** | Set on each key. See [step 1](#1-set-a-pin-on-each-yubikey) below. |
@@ -104,7 +104,8 @@ screen explains what happened and how to fix it. See
   - Custom fields can be text, hidden, URL, email, phone, date or multiline.
 - **Organise:** add tags, star favorites, change the sort order, and filter by kind,
   tag or favorites in the sidebar.
-- **Find:** press **Ctrl+F** and type. Search is fuzzy, so `gthb` finds *GitHub*.
+- **Find:** press **Ctrl+F** and type. Search is fuzzy and ignores accents, so `nwb`
+  finds *Northwind Bank*.
 - **Delete:** deleted items go to **Trash**. Undo right away from the toast, restore
   them later, or empty the trash.
 
@@ -118,8 +119,9 @@ screen explains what happened and how to fix it. See
   then hides it again.
 
 ### 6. Command palette
-Press **Ctrl+K** to run any action by typing: open an item, copy a password, create
-an item, open the generator, lock, open settings, and so on.
+Press **Ctrl+K** to run any action by typing: copy the selected item's password,
+create an item, jump to a tag or the trash, open the generator, lock, open settings,
+and so on.
 
 ![The Ctrl+K command palette](docs/images/screenshot-palette.png)
 
