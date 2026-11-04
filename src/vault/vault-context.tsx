@@ -16,7 +16,7 @@ import {
 } from "react";
 
 import { useAppStatus } from "@/app/app-status";
-import { toast } from "@/components/ui/use-toast";
+import { toast, type ToastHandle } from "@/components/ui/use-toast";
 import { ipc, ipcErrorCode } from "@/lib/ipc";
 import type { ItemKind, ItemMeta } from "@/lib/ipc-types";
 
@@ -139,6 +139,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   });
   const editorDirty = useRef(false);
   const pendingFocus = useRef<{ target: FocusTarget; at: number } | null>(null);
+  /** Open "Moved to trash" toasts by item id: their Undo is void once the item is gone. */
+  const undoToasts = useRef(new Map<string, ToastHandle>());
 
   const hits = useMemo(
     () => visibleItems(state.prepared, state.view, state.query, state.sort),
@@ -338,13 +340,15 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           report(err, "Couldn't move the item to the trash");
           return;
         }
-        toast({
+        undoToasts.current.get(item.id)?.dismiss();
+        const handle = toast({
           title: "Moved to trash",
           description: `“${item.title}”`,
           action: {
             label: "Undo",
             altText: "Undo: restore the item from the Trash",
             onClick: () => {
+              undoToasts.current.delete(item.id);
               ipc.restoreItem(item.id).then(
                 (meta) => {
                   dispatch({ type: "restored", meta, select: true });
@@ -356,10 +360,13 @@ export function VaultProvider({ children }: { children: ReactNode }) {
             },
           },
         });
+        undoToasts.current.set(item.id, handle);
       },
       restore: async (item) => {
         try {
           dispatch({ type: "restored", meta: await ipc.restoreItem(item.id), select: false });
+          undoToasts.current.get(item.id)?.dismiss();
+          undoToasts.current.delete(item.id);
           toast({ variant: "success", title: "Restored", description: `“${item.title}” is back in your vault.` });
         } catch (err: unknown) {
           report(err, "Couldn't restore the item");
@@ -376,6 +383,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         try {
           await ipc.deleteItem(item.id);
           dispatch({ type: "deleted", id: item.id });
+          undoToasts.current.get(item.id)?.dismiss();
+          undoToasts.current.delete(item.id);
           toast({ title: "Deleted permanently", description: `“${item.title}”` });
           focusSoon("list");
         } catch (err: unknown) {
@@ -386,6 +395,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         try {
           const deleted = await ipc.emptyTrash();
           dispatch({ type: "trashEmptied" });
+          for (const handle of undoToasts.current.values()) handle.dismiss();
+          undoToasts.current.clear();
           toast({
             title: "Trash emptied",
             description: `${String(deleted)} ${deleted === 1 ? "item was" : "items were"} deleted for good.`,
