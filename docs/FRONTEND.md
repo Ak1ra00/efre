@@ -68,6 +68,19 @@ Notes for specific features:
 - **Selection:** a selected row needs a visible cue besides its background (e.g. an
   accent bar), so state doesn't rely on a 1.3:1 colour difference.
 
+### YubiKey prompts (`src/unlock/key-prompt.tsx`, E3)
+
+Every prompting command (setup_enroll_key, unlock, add_key, rename_key, remove_key) runs
+through `useKeyPrompt().run(() => ipc.…)`, which never rejects: it resolves with
+`{ ok: true, value }` or `{ ok: false, error, cancelledByUser }`. `<KeyPromptOverlay
+prompt={…} total rows note enrolledKeys />` shows what Windows asks for from the
+`key-step` events (`describeKeyStep` plus one line per step), progress rows for multi-prompt
+flows, and Cancel/Esc (`cancel_prompt`, re-sent if a new prompt opens). It sits in the
+upper part of the window so it stays readable above the Windows Security dialog. A Cancel
+the user pressed is reported as `cancelledByUser` so no error is shown;
+`keyErrorCopy(err, flow)` (`src/unlock/key-errors.tsx`) gives flow-specific copy for the
+rest (for example `authn.cancelled` also covers "Windows didn't recognise this key").
+
 ## Primitives (`src/components/ui/`)
 
 Accessible, shadcn-style, built on `radix-ui` and `class-variance-authority`:
