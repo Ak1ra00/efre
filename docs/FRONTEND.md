@@ -68,6 +68,38 @@ Notes for specific features:
 - **Selection:** a selected row needs a visible cue besides its background (e.g. an
   accent bar), so state doesn't rely on a 1.3:1 colour difference.
 
+## Vault UI (`src/vault/`)
+
+- **State:** `vault-context.tsx` (`VaultProvider`, `useVault()`) holds the list metadata,
+  view, query, sort, selection and editor. `vault-reducer.ts` has every transition as a
+  pure function. All of it unmounts on lock.
+- **Layout** (`use-layout.ts`, by window width): at 1100 px and wider, sidebar, list and
+  detail. From 720 px, the sidebar becomes an icon rail that can be expanded. Below
+  720 px, the rail plus one pane at a time: the list, then the detail with Back (Esc
+  also goes back).
+- **Search** (`search.ts`): fzy-style fuzzy matching over title, username, tags and the
+  kind name. It ignores case and accents, and every word must match. The best match is
+  listed and selected first, and ties keep the chosen sort.
+- **List:** a `listbox` driven by `aria-activedescendant`, with the search field as its
+  combobox. ↑/↓/Home/End/PageUp/PageDown move, Enter opens, and typing in the list
+  starts a search. Arrows move the selection; in the wide layouts the detail follows it.
+- **Secrets:** hidden values are fetched only by Reveal. They show for 10 s with a
+  countdown, can't be selected, and hide when efre loses focus or the field unmounts.
+  The editor never fetches secrets: an existing hidden field goes back as `"keep"`
+  unless the user chooses Change and types a value (empty still means keep). New fields
+  left empty aren't saved. A kind's template fields that an item lacks are offered
+  again when editing.
+- **Copy:** `copy_field` for field buttons, and `copy_role` for Ctrl+C (password) and
+  Ctrl+B (username). Ctrl+C is left alone when text is selected or focus is in a text
+  field other than the vault search.
+- **Shortcuts:** Ctrl+N (kind menu; 1–5 pick a kind), Ctrl+F, Ctrl+C, Ctrl+B and Esc.
+- **Palette:** `vault.new.*` and `vault.new`, `vault.go.*` (views, tags, trash),
+  `vault.search`, `vault.empty-trash`, and `vault.item.*` for the selected item.
+- **Menus** are `modal={false}`. That avoids Radix's scroll-lock `<style>`, which the CSP
+  blocks, and a focus trap that fights the editor's initial focus.
+- **Seam for overlays:** when a palette command opens the editor, the palette's
+  close-autofocus shouldn't move focus back to where it was.
+
 ## Primitives (`src/components/ui/`)
 
 Accessible, shadcn-style, built on `radix-ui` and `class-variance-authority`:
