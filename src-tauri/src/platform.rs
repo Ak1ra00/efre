@@ -28,6 +28,7 @@ mod imp {
     use std::process::{Command, Stdio};
 
     use windows::Win32::System::SystemInformation::GetSystemWindowsDirectoryW;
+    use windows::Win32::System::Threading::CREATE_DEFAULT_ERROR_MODE;
 
     /// The Windows WebAuthn API (`webauthn.dll`, System32 only), with the Windows
     /// Security dialog parented to `hwnd`, and its API version.
@@ -111,6 +112,9 @@ mod imp {
         let mut child = Command::new(explorer)
             // Explorer parses its own command line; pass `/select,"<path>"` verbatim.
             .raw_arg(argument)
+            // Explorer may stay up as the user's shell: give it Windows' default error
+            // mode, not the one efre sets for itself at startup (ARCHITECTURE §8.1).
+            .creation_flags(CREATE_DEFAULT_ERROR_MODE.0)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())

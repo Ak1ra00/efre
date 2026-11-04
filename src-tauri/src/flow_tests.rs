@@ -18,6 +18,7 @@ use crate::dto::{
     Settings,
 };
 use crate::error::IpcError;
+use crate::hardening::Hardening;
 use crate::lock::Clock;
 use crate::lock::tests::ManualClock;
 use crate::paths::tests::TempDir;
@@ -104,6 +105,7 @@ fn state_with(
             authenticator,
             api_version: Some(9),
             paths: Ok(paths.clone()),
+            hardening: Hardening::applied(),
         },
         clipboard,
         ui,
@@ -205,6 +207,7 @@ impl Harness {
                 authenticator: Ok(wrap(Arc::clone(&mock))),
                 api_version: Some(9),
                 paths: Ok(paths.clone()),
+                hardening: Hardening::applied(),
             },
             Box::new(FakeClipboard(Arc::clone(&clip))),
             Box::new(FakeUi(Arc::clone(&ui))),
@@ -1161,7 +1164,47 @@ fn security_info_reports_what_is_active() {
         protections.contains("no YubiKey is plugged in"),
         "{protections}"
     );
+    assert!(
+        protections.contains("Windows Error Reporting leaves efre out"),
+        "{protections}"
+    );
     assert!(!info.limits.join("\n").contains("unavailable"));
+}
+
+#[test]
+fn security_info_lists_hardening_that_did_not_apply() {
+    let dir = TempDir::new();
+    let paths = paths::prepare(dir.path()).unwrap();
+    let mock: Arc<dyn Authenticator> = Arc::new(MockAuthenticator::new());
+    let (clipboard, ui, clock) = fakes();
+    let mut hardening = Hardening::applied();
+    hardening.crash_reports = Monitor::Unavailable("Windows refused it (0x80004005)".into());
+    let state = AppState::new(
+        Environment {
+            authenticator: Ok(mock),
+            api_version: Some(9),
+            paths: Ok(paths),
+            hardening,
+        },
+        clipboard,
+        ui,
+        clock,
+    );
+    let info = state.security_info();
+    let limits = info.limits.join("\n");
+    assert!(
+        limits.contains(
+            "Windows Error Reporting crash reports and dumps is unavailable: Windows refused \
+             it (0x80004005)"
+        ),
+        "{limits}"
+    );
+    let protections = info.protections.join("\n");
+    assert!(
+        !protections.contains("Windows Error Reporting leaves efre out"),
+        "{protections}"
+    );
+    assert!(protections.contains("never in the current folder or PATH"));
 }
 
 #[cfg(not(windows))]
