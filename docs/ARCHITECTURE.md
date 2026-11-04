@@ -906,6 +906,15 @@ See §3.3 for what it doesn't block.
     `--disable-background-networking`, `--disable-component-update`,
     `--disable-domain-reliability`, `--disable-sync`, `--no-pings`,
     `--disable-client-side-phishing-detection` and `--no-first-run`.
+  - It also adds `--host-resolver-rules="MAP * ~NOTFOUND"`, so every host name
+    lookup in WebView2's network service fails.
+    - efre's page and IPC (`http://tauri.localhost`, `http://ipc.localhost`) are
+      answered inside WebView2 before any lookup, so the app is unaffected.
+    - Without it, Chromium opened a speculative connection from a WebView2
+      process to the app origin on `[::1]:80`. The CI smoke test caught this
+      (2026-11-04): no request was sent, but a local program listening on port 80
+      would have been contacted.
+    - With it, nothing in WebView2 can reach a socket by name, loopback included.
   - SmartScreen and reputation checks are off, as are autofill and password
     autosave.
   - The WebView2 loader and runtime read `WEBVIEW2_*` environment variables,
@@ -986,13 +995,18 @@ Things to know:
   - `tsc --noEmit`, `eslint`, `vitest run`
   - the mock-exclusion check
   - an unsigned `tauri build` (NSIS) uploaded as an artifact
-  - a smoke test of that build (phase 5). The release `efre.exe` runs for 20 s, and
+  - a smoke test of that build (phase 5). The release `efre.exe` runs for 25 s, and
     the step fails if:
     - efre exits;
     - no `msedgewebview2.exe` with `\efre\webview` in its command line appears, which
       means WebView2 didn't start under the §8.1 policies;
+    - WebView2's browser process lacks `--host-resolver-rules` (§10);
     - `Get-NetTCPConnection` or `Get-NetUDPEndpoint`, sampled twice a second, shows
-      any socket owned by efre or by those processes;
+      any socket owned by efre or by those processes, loopback included. Each
+      observation names the owning process type;
+    - the window, read through UI Automation, shows "efre couldn't start", meaning
+      its IPC failed. One of efre's screen headings confirms the page and IPC work.
+      If UI Automation can't read the window on the runner, that is a warning;
     - `Get-ProcessMitigation` reports an image-load policy as `OFF`;
     - the per-user WER exclusion value is missing.
 

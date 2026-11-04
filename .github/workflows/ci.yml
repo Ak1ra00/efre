@@ -176,19 +176,22 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       # The release app starts under the startup hardening, WebView2 comes up in efre's own
-      # data folder, and neither efre.exe nor its WebView2 processes open a socket
-      # (ARCHITECTURE §8.1 and §10). Without webauthn.dll (or with an old one) the app shows
-      # its "unsupported" screen and keeps running, which is all this needs.
-      - name: Smoke test (release app starts, WebView2 runs, zero sockets)
+      # data folder with efre's browser arguments, the window shows one of efre's screens
+      # (so the page and its IPC work), and neither efre.exe nor its WebView2 processes
+      # open a socket, not even to loopback (ARCHITECTURE §8.1 and §10). Without
+      # webauthn.dll (or with an old one) the app shows its "Update Windows" screen and
+      # keeps running, which is all this needs.
+      - name: Smoke test (release app starts, shows a screen, zero sockets)
         shell: powershell
         timeout-minutes: 5
         run: |
           $ErrorActionPreference = 'Stop'
           $exe = Join-Path $PWD 'target\release\efre.exe'
           $marker = '*\efre\webview*'   # efre's own WebView2 data folder (window.rs)
-          $runSeconds = 20
+          $runSeconds = 25
           $problems = [System.Collections.Generic.List[string]]::new()
           $sockets = [System.Collections.Generic.List[string]]::new()
+          $owners = @{}
 
           $wv2Key = 'Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
           $wv2 = @("HKLM:\SOFTWARE\WOW6432Node\$wv2Key", "HKCU:\Software\$wv2Key") |
@@ -197,10 +200,37 @@ jobs:
           if ($wv2) { Write-Host "WebView2 runtime: $($wv2 -join ', ')" }
           else { Write-Host '::warning::No WebView2 runtime is registered on this runner' }
 
-          function Get-EfreWebViews {
+          function Get-EfreWebViewProcesses {
             @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" |
-              Where-Object { $_.CommandLine -like $marker } |
-              ForEach-Object { [int]$_.ProcessId })
+              Where-Object { $_.CommandLine -like $marker })
+          }
+          function Get-ProcessKind([string]$commandLine) {
+            if ($commandLine -match '--utility-sub-type=(\S+)') { return "utility $($Matches[1])" }
+            if ($commandLine -match '--type=(\S+)') { return $Matches[1] }
+            return 'browser'
+          }
+
+          # The window's screens (src/): one of these headings means the page loaded and
+          # app_status went through IPC. "efre couldn't start" means IPC failed.
+          $headings = 'Welcome to efre', 'Insert and touch your YubiKey', 'Update Windows to use efre',
+            "efre can't open your vault", "efre can't start"
+          $startupError = "efre couldn't start"
+          Add-Type -AssemblyName UIAutomationClient
+          Add-Type -AssemblyName UIAutomationTypes
+          $AE = [System.Windows.Automation.AutomationElement]
+          function Get-EfreUiNames([int]$processId) {
+            $condition = New-Object System.Windows.Automation.PropertyCondition -ArgumentList $AE::ProcessIdProperty, $processId
+            $windows = $AE::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, $condition)
+            if ($windows.Count -eq 0) { return $null }
+            $names = [System.Collections.Generic.List[string]]::new()
+            foreach ($window in $windows) {
+              $found = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+              foreach ($element in $found) {
+                try { $name = $element.Current.Name } catch { $name = $null }
+                if ($name) { $names.Add($name) }
+              }
+            }
+            return ,$names
           }
 
           $efre = Start-Process -FilePath $exe -PassThru
@@ -208,19 +238,44 @@ jobs:
           $samples = 0
           $webviewCount = 0
           $imageLoad = $null
+          $resolverRules = @{}
+          $uiWindow = $false
+          $uiNames = @()
+          $uiHeading = $null
+          $uiNote = $null
+          $lastUi = [DateTime]::MinValue
           try {
             $deadline = (Get-Date).AddSeconds($runSeconds)
             while ((Get-Date) -lt $deadline -and -not $efre.HasExited) {
-              $webviews = Get-EfreWebViews
+              $webviews = Get-EfreWebViewProcesses
               $webviewCount = [Math]::Max($webviewCount, $webviews.Count)
-              $ids = @($efre.Id) + $webviews
+              foreach ($process in $webviews) {
+                $kind = Get-ProcessKind $process.CommandLine
+                $owners[[int]$process.ProcessId] = $kind
+                $resolverRules[$kind] = $process.CommandLine -like '*--host-resolver-rules=*'
+              }
+              $ids = @($efre.Id) + @($webviews | ForEach-Object { [int]$_.ProcessId })
+              $owners[[int]$efre.Id] = 'efre.exe'
               Get-NetTCPConnection -ErrorAction SilentlyContinue |
                 Where-Object { $ids -contains $_.OwningProcess } |
-                ForEach-Object { $sockets.Add("TCP pid $($_.OwningProcess) $($_.LocalAddress):$($_.LocalPort) -> $($_.RemoteAddress):$($_.RemotePort) $($_.State)") }
+                ForEach-Object { $sockets.Add("TCP $($owners[[int]$_.OwningProcess]) (pid $($_.OwningProcess)) $($_.LocalAddress):$($_.LocalPort) -> $($_.RemoteAddress):$($_.RemotePort) $($_.State)") }
               Get-NetUDPEndpoint -ErrorAction SilentlyContinue |
                 Where-Object { $ids -contains $_.OwningProcess } |
-                ForEach-Object { $sockets.Add("UDP pid $($_.OwningProcess) $($_.LocalAddress):$($_.LocalPort)") }
+                ForEach-Object { $sockets.Add("UDP $($owners[[int]$_.OwningProcess]) (pid $($_.OwningProcess)) $($_.LocalAddress):$($_.LocalPort)") }
               $samples++
+              if (-not $uiHeading -and ((Get-Date) - $lastUi).TotalSeconds -ge 2) {
+                $lastUi = Get-Date
+                try {
+                  $names = Get-EfreUiNames $efre.Id
+                  if ($null -ne $names) {
+                    $uiWindow = $true
+                    if ($names.Count -gt 0) { $uiNames = @($names) }
+                    $uiHeading = $headings | Where-Object { $h = $_; @($names | Where-Object { $_ -like "*$h*" }).Count -gt 0 } | Select-Object -First 1
+                  }
+                } catch {
+                  $uiNote = "UI Automation error: $_"
+                }
+              }
               Start-Sleep -Milliseconds 500
             }
             if ($efre.HasExited) {
@@ -235,14 +290,22 @@ jobs:
           } finally {
             Stop-Process -Id $efre.Id -Force -ErrorAction SilentlyContinue
             Start-Sleep -Seconds 2
-            Get-EfreWebViews | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+            Get-EfreWebViewProcesses | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
           }
 
           if ($webviewCount -lt 1) {
             $problems.Add("no msedgewebview2.exe with '\efre\webview' in its command line: WebView2 did not start")
+          } elseif (-not $resolverRules['browser']) {
+            $problems.Add('the WebView2 browser process did not get --host-resolver-rules (window.rs)')
           }
           if ($sockets.Count -gt 0) {
             $problems.Add("$($sockets.Count) socket observation(s) for efre or its WebView2 processes")
+          }
+          if (@($uiNames | Where-Object { $_ -like "*$startupError*" }).Count -gt 0) {
+            $problems.Add("the window shows '$startupError': its IPC failed")
+          } elseif (-not $uiHeading) {
+            $why = if ($uiNote) { $uiNote } elseif (-not $uiWindow) { 'UI Automation did not find the window' } else { "UI Automation saw: $(($uiNames | Select-Object -First 12) -join ' | ')" }
+            Write-Host "::warning::no efre screen heading was confirmed. $why"
           }
           # Image-load policy (hardening.rs): fail only on an explicit OFF, so a different
           # cmdlet output format is a warning rather than a false failure.
@@ -265,8 +328,15 @@ jobs:
           Write-Host '--- efre smoke test ---'
           Write-Host "efre.exe pid:            $($efre.Id), ran for $runSeconds s"
           Write-Host "WebView2 processes:      $webviewCount (command line contains \efre\webview)"
+          Write-Host "  kinds:                 $(($owners.Values | Sort-Object -Unique) -join ', ')"
+          Write-Host "  --host-resolver-rules: $(($resolverRules.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ', ')"
+          Write-Host "screen heading (UIA):    $(if ($uiHeading) { $uiHeading } else { 'not confirmed' })"
           Write-Host "network samples:         $samples, socket observations: $($sockets.Count)"
           $sockets | Select-Object -Unique | ForEach-Object { Write-Host "  $_" }
+          if ($sockets.Count -gt 0) {
+            Get-NetTCPConnection -State Listen -LocalPort 80, 443 -ErrorAction SilentlyContinue |
+              ForEach-Object { Write-Host "  listener $($_.LocalAddress):$($_.LocalPort) pid $($_.OwningProcess) $((Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).ProcessName)" }
+          }
           Write-Host "image-load policy:       $policy"
           Write-Host "WER exclusion (HKCU):    $wer"
           if ($problems.Count -gt 0) {

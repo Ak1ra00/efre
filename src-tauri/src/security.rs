@@ -87,7 +87,7 @@ pub(crate) fn info(facts: Facts<'_>) -> SecurityInfo {
          efre's core, not in the window",
         "Screen capture and recording are blocked for efre's window",
         "Makes no network connections: no network code, a strict content security policy, \
-         and navigation away from efre is blocked",
+         navigation away from efre is blocked, and this window can't look up any host name",
         "The vault is stored only on this PC, in %LOCALAPPDATA%\\efre, and setup never \
          overwrites an existing vault",
     ]

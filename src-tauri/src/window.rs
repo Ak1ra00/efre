@@ -18,6 +18,13 @@ const BACKGROUND: Color = Color(0x0e, 0x0f, 0x11, 0xff);
 
 /// WebView2 browser arguments. Keeps wry's defaults (which are replaced, not merged,
 /// when this is set) and turns off background networking features.
+///
+/// `--host-resolver-rules` makes every host name lookup in WebView2's network service
+/// fail. efre's own pages and IPC (`tauri.localhost`, `ipc.localhost`) are answered
+/// inside WebView2 before any lookup, so nothing efre needs is lost. Anything that would
+/// reach the network stack, such as Chromium opening a speculative connection to the
+/// app's `*.localhost` origin on port 80, now fails before a socket exists
+/// (ARCHITECTURE §10).
 #[cfg(windows)]
 const WEBVIEW2_ARGS: &str = concat!(
     "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection",
@@ -28,6 +35,7 @@ const WEBVIEW2_ARGS: &str = concat!(
     " --no-pings",
     " --disable-client-side-phishing-detection",
     " --no-first-run",
+    " --host-resolver-rules=\"MAP * ~NOTFOUND\"",
 );
 
 pub(crate) fn create_main_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
@@ -99,5 +107,28 @@ pub(crate) fn lock_down_browser_ui(app: &AppHandle, state: &Arc<AppState>) {
         state.set_browser_ui_monitor(Monitor::Unavailable(
             "efre turns them off on Windows only".to_owned(),
         ));
+    }
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::WEBVIEW2_ARGS;
+
+    #[test]
+    fn webview2_args_keep_wry_defaults_and_block_every_host_lookup() {
+        assert!(
+            WEBVIEW2_ARGS
+                .starts_with("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection ")
+        );
+        assert!(WEBVIEW2_ARGS.ends_with(" --host-resolver-rules=\"MAP * ~NOTFOUND\""));
+        for flag in [
+            "--disable-background-networking",
+            "--disable-component-update",
+            "--disable-domain-reliability",
+            "--disable-sync",
+            "--no-pings",
+        ] {
+            assert!(WEBVIEW2_ARGS.split(' ').any(|arg| arg == flag), "{flag}");
+        }
     }
 }
