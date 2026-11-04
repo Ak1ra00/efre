@@ -50,7 +50,10 @@
     "shortDescription": "Offline vault that opens only with your YubiKey",
     "windows": {
       "webviewInstallMode": { "type": "skip" },
-      "nsis": { "installMode": "currentUser" }
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "./windows/installer-hooks.nsh"
+      }
     }
   }
 }
