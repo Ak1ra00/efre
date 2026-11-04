@@ -1,12 +1,15 @@
 # efre — Architecture
 
-Status: **Phase 3.**
+Status: **Phases 1–5 implemented.** The app still has to be verified on the
+owner's PC (`docs/APP_TESTS.md`).
 - `efre-core` and the mock implement §5–§7.
-- `efre-authn` now has the Windows WebAuthn driver (§4), attestation
-  verification and the YubiKey presence watcher. It is CI-verified on Windows,
-  and it passed the hardware check on the owner's PC: WebAuthn API 9, two
-  YubiKeys, 20 passed and 0 failed (`docs/HARDWARE_TESTS.md` §6).
-- The app (§8–§10) is phase 4.
+- `efre-authn` has the Windows WebAuthn driver (§4), attestation verification and
+  the YubiKey presence watcher. It is CI-verified on Windows, and it passed the
+  hardware check on the owner's PC: WebAuthn API 9, two YubiKeys, 20 passed and 0
+  failed (`docs/HARDWARE_TESTS.md` §6).
+- The app (§8–§10): IPC commands, lock triggers, clipboard, window hardening, the
+  React interface (`docs/FRONTEND.md`) and the phase 5 startup hardening. CI
+  builds the unsigned installer and smoke-tests the release app.
 - Decisions D1–D5 were accepted with their defaults (§14).
 
 Priorities, in order: security, reliability, UX, features (see `docs/SPEC.md`).

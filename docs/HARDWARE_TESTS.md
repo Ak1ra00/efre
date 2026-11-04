@@ -25,7 +25,7 @@ The tool works in a throwaway vault under `%TEMP%`. It never touches `%LOCALAPPD
    .\hardware_check.exe
    ```
    If Windows SmartScreen still warns ("Windows protected your PC"): **More info →
-   Run anyway**. It is unsigned because code signing comes later (phase 5).
+   Run anyway**. It is unsigned because code signing comes later.
 
 ### Option B — build it yourself (needed later for development anyway)
 Once, in PowerShell (Visual Studio Build Tools asks for administrator approval and

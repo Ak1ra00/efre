@@ -46,9 +46,9 @@ while only one key is enrolled.
 | **Clipboard** | A copied value is kept out of clipboard history (Win+V) and the cloud clipboard. It is cleared after 30 s by default, and also on lock and on quit, but only if it is still on the clipboard. Text you copied afterwards is left alone. |
 | **Auto-lock** | The vault locks after 5 idle minutes by default. It also locks on sleep or hibernate, Windows lock (Win+L), user switch or sign-out, and when no YubiKey is plugged in. Locking wipes everything decrypted and reloads the window. |
 | **Screen capture** | The window is excluded from screenshots and screen recording (`WDA_EXCLUDEFROMCAPTURE`). |
-| **No network** | efre contains no network code and makes no connections. CI fails if an HTTP, TLS or WebSocket crate, or a network-capable Tauri plugin, ever enters the build. The window has a strict content security policy, can't navigate away, and has WebView2's background networking turned off. |
+| **No network** | efre contains no network code and makes no connections. CI fails if an HTTP, TLS or WebSocket crate, or a network-capable Tauri plugin, ever enters the build. CI also starts the release app and fails if it, or its WebView2 processes, open any network socket. The window has a strict content security policy, can't navigate away, and has WebView2's background networking turned off. |
 | **Window lockdown** | The webview's own print, save-page, find and reload shortcuts are off, and so is its context menu. Devtools are not compiled into release builds. Nothing is stored in browser storage. |
-| **Process** | efre never asks for admin. `webauthn.dll` is loaded only from `System32`. efre is excluded from Windows Error Reporting crash dumps. |
+| **Process** | efre never asks for admin. At startup it excludes itself from Windows Error Reporting, so a crash leaves no crash report or memory dump of efre, and it turns off crash dialogs. Libraries load only from System32 or efre's own folder, never from network shares, low-integrity files, the current folder or `PATH`. `webauthn.dll` comes only from System32. WebView2 settings in `WEBVIEW2_*` environment variables, which could otherwise turn on remote debugging, are ignored. |
 | **Supply chain** | Dependencies are kept to a minimum and pinned by lockfiles. CI runs `cargo-deny` (bans, licenses, sources, advisories), `cargo-audit` and `npm audit` on every push. CI also proves a release build can't contain the test-only simulated YubiKey. |
 
 The **Settings → Security** page in the app lists the protections that are actually
@@ -96,6 +96,12 @@ No software can promise everything. These are the limits of efre's design:
   accessibility software.
 - **SSDs:** efre uses SQLite's `secure_delete`, but wear-levelling means old encrypted
   data can physically remain on the drive. It is still encrypted.
+- **WebView2 crash dumps:** the window is drawn by WebView2, which runs in its own
+  processes and handles its own crashes. Its crash dumps go to
+  `%LOCALAPPDATA%\efre\webview`, and they can hold parts of what the window showed.
+  Depending on your Windows diagnostic settings, Windows may send them to Microsoft.
+  To limit this, open Settings → Privacy & security → Diagnostics & feedback and turn
+  off **Send optional diagnostic data**.
 - **Trusted parts:** efre trusts the Windows Security dialog, `webauthn.dll`, the
   WebView2 runtime and the YubiKey's firmware. A flaw in any of them is outside
   efre's control.
@@ -118,14 +124,29 @@ No software can promise everything. These are the limits of efre's design:
 
 ## Optional: block efre in Windows Firewall
 efre needs no network, and CI and the test checklist check that it opens none. If you
-want Windows itself to enforce this, you can add an outbound block rule. This needs
-admin once; efre itself never asks for admin. In an **administrator** PowerShell:
-```powershell
-New-NetFirewallRule -DisplayName "efre: block outbound" -Direction Outbound -Action Block `
-  -Program "$env:LOCALAPPDATA\Programs\efre\efre.exe"
-```
-To remove it: `Remove-NetFirewallRule -DisplayName "efre: block outbound"`.
+want Windows itself to enforce this, you can add an outbound block rule. Adding a
+firewall rule needs admin; efre itself never asks for it.
 
-The window's web engine runs in WebView2 processes (`msedgewebview2.exe`), which are
-shared with other apps. A rule for them would affect those apps too, so this rule
-covers `efre.exe` only.
+1. In a normal PowerShell window, print efre's path:
+   ```powershell
+   Join-Path $env:LOCALAPPDATA 'Programs\efre\efre.exe'
+   ```
+2. Open PowerShell with **Run as administrator**, and create the rule with that exact
+   path. Type the path itself, not `$env:LOCALAPPDATA`: an administrator window may run
+   as another account.
+   ```powershell
+   New-NetFirewallRule -DisplayName 'efre: block outbound' -Direction Outbound `
+     -Program 'C:\Users\<you>\AppData\Local\Programs\efre\efre.exe' `
+     -Action Block -Profile Any
+   ```
+3. To check the rule, or to remove it:
+   ```powershell
+   Get-NetFirewallRule -DisplayName 'efre: block outbound' | Get-NetFirewallApplicationFilter
+   Remove-NetFirewallRule -DisplayName 'efre: block outbound'
+   ```
+
+The rule covers `efre.exe` only. The window's web engine runs in WebView2 processes
+(`msedgewebview2.exe`). Teams, Outlook and many other apps share that program, and its
+path changes with every update, so efre doesn't suggest a rule for it. For WebView2,
+efre relies on its content security policy, blocked navigation, its browser settings and
+the zero-connection checks.

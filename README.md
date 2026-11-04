@@ -18,7 +18,9 @@ for Windows: a closed place on your own PC that opens only with your YubiKey.
 - **No master password.** The vault opens with an enrolled YubiKey, its PIN (or
   fingerprint on a YubiKey Bio) and a touch. There is nothing to guess or phish.
 - **Fully offline.** No account, no cloud, no sync, no telemetry and no updater. efre
-  contains no network code at all, and CI enforces that.
+  contains no network code at all. CI enforces that, and also starts the app and checks
+  that it opens no network connections. You can also
+  [block it in Windows Firewall](SECURITY.md#optional-block-efre-in-windows-firewall).
 - **Secrets stay in the core.** Keys and decrypted secrets live only in efre's Rust
   core and are wiped on lock. Copying happens there too, so the app window never sees
   what you copy.
@@ -52,8 +54,12 @@ efre never asks for administrator rights.
 3. Under **Artifacts**, download **`efre-windows-unsigned-…`** and unzip it.
 4. Run **`bundle\nsis\efre_0.1.0_x64-setup.exe`**.
    - SmartScreen warns about unsigned apps. Choose **More info → Run anyway**.
-   - The installer puts efre in your user profile, so there is no admin prompt.
+   - efre installs for your user only, into `%LOCALAPPDATA%\Programs\efre`, so there
+     is no admin prompt.
 5. Start **efre** from the Start menu.
+
+Your vault is kept separately, in `%LOCALAPPDATA%\efre`. Uninstalling efre (Settings →
+Apps → Installed apps) removes the program and never touches the vault.
 
 Prefer to build it yourself? See [Build from source](#build-from-source).
 

@@ -2,7 +2,7 @@
 
 These tests use the real app and the real vault location,
 `%LOCALAPPDATA%\efre\vault.efre`. Treat this vault as a **test vault**: don't put real
-secrets in it until phase 5 is done.
+secrets in it until you have finished these checks.
 
 > ⚠️ **Never test "PIN blocked" on a key you rely on.** Unblocking a FIDO PIN requires
 > a FIDO reset, which wipes every FIDO credential on that key, including your passkeys.
@@ -18,9 +18,11 @@ secrets in it until phase 5 is done.
 2. Click the newest **CI** run on branch `phase-4-app` that has a green tick.
 3. Under **Artifacts**, download `efre-windows-unsigned-…` and unzip it.
 4. Run `bundle\nsis\efre_0.1.0_x64-setup.exe`.
-   - SmartScreen will warn, because the installer is unsigned until phase 5. Choose
+   - SmartScreen will warn, because the installer isn't code-signed yet. Choose
      **More info → Run anyway**.
    - It installs for your user only. There should be **no administrator prompt**.
+   - The folder page proposes `C:\Users\<you>\AppData\Local\Programs\efre`. The
+     program lives there, and the vault stays separately in `%LOCALAPPDATA%\efre`.
 5. Start efre from the Start menu.
 
 ## 2. Checks
@@ -29,6 +31,9 @@ Tick each line. Write down anything that looks or feels wrong, even small things
 ### First run (setup wizard)
 - [ ] The window opens dark, with no white flash. The title bar is dark, and
       Windows 11 snap layouts appear when you hover over maximize.
+- [ ] The name ⵉⴼⵔⵉ shows in Tifinagh letters, not empty boxes, in three places: under
+      the logo on the welcome screen (with the line about the name), next to "efre" in
+      the sidebar, and on the unlock screen.
 - [ ] Welcome → "How efre works" → enroll primary key → enroll backup key → done.
 - [ ] Each enrollment says which key to insert, then shows **two** Windows Security
       prompts on the same key: create it, then confirm it.
@@ -117,6 +122,20 @@ Each of these locks the vault. The unlock screen then says why it locked.
 - [ ] Security info shows the app version, the format version, the WebAuthn API
       version, protections and limits.
 
+### Process hardening
+- [ ] Settings → Security lists these protections, and no line in the limits says
+      "unavailable":
+  - Windows Error Reporting leaves efre out;
+  - no crash dialog;
+  - where Windows looks for libraries;
+  - libraries from network shares;
+  - System32's copy first;
+  - WebView2 settings in environment variables are ignored.
+- [ ] With efre running, in PowerShell:
+      `Get-ProcessMitigation -Name efre.exe | Select-Object -ExpandProperty ImageLoad`
+      shows `BlockRemoteImageLoads`, `BlockLowLabelImageLoads` and `PreferSystem32`
+      as `ON`.
+
 ### Screenshot and browser lockdown
 - [ ] Take a screenshot with Win+Shift+S, PrtScn, or the Snipping Tool screen
       recorder: the efre window comes out **black**. Check this on the setup, unlock
@@ -146,6 +165,11 @@ while ((Get-Date) -lt $end) {
 "processes watched: $($ids.Count)   samples with sockets: $seen"
 ```
 - [ ] It ends with `samples with sockets: 0`, and `processes watched` is 2 or more.
+
+### Uninstall (do this last)
+- [ ] Settings → Apps → Installed apps → efre → Uninstall. Afterwards
+      `%LOCALAPPDATA%\Programs\efre` is gone, but `%LOCALAPPDATA%\efre\vault.efre`
+      is still there. Reinstall, and the same vault unlocks with your keys.
 
 ## 3. Results to send back
 - Any line you couldn't tick, with what you saw. Include the exact message text where
