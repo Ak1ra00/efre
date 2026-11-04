@@ -43,6 +43,7 @@ import { buildDraft, createForm, editForm, fingerprint, type FormField, type For
 import { fieldLabel } from "./FieldRow";
 import { useItemView } from "./ItemDetail";
 import { KindIcon } from "./KindIcon";
+import { focusIsFree } from "./NewItemMenu";
 import { TagInput } from "./TagInput";
 import { useVault } from "./vault-context";
 import type { EditorTarget } from "./vault-reducer";
@@ -386,7 +387,7 @@ function AddFieldMenu({
 }) {
   const added = useRef(false);
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button size="sm" variant="ghost" disabled={disabled}>
           <Plus aria-hidden="true" />
@@ -401,7 +402,7 @@ function AddFieldMenu({
           if (!added.current) return;
           added.current = false;
           event.preventDefault();
-          onClosed();
+          if (focusIsFree()) onClosed();
         }}
       >
         <DropdownMenuLabel>Field type</DropdownMenuLabel>

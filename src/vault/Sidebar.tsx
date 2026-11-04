@@ -232,7 +232,7 @@ function Rail() {
           <li aria-hidden="true" className="my-1 h-px w-6 bg-line" />
           {tags.length === 0 ? null : (
             <li>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <Tip label="Tags" side="right">
                   <DropdownMenuTrigger asChild>
                     <button

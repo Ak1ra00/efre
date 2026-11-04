@@ -155,7 +155,7 @@ export function ItemList() {
 function SortMenu({ sort, onSort }: { sort: SortKey; onSort: (sort: SortKey) => void }) {
   const current = SORT_OPTIONS.find((option) => option.key === sort) ?? SORT_OPTIONS[0];
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <Tip label={`Sort: ${current?.label ?? ""}`}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" aria-label={`Sort: ${current?.label ?? ""}`}>

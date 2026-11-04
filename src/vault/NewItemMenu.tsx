@@ -18,6 +18,15 @@ import { cn } from "@/lib/utils";
 import { useVault } from "./vault-context";
 
 /**
+ * True when nothing in particular has focus: it fell back to the page when the menu that
+ * had it went away. (If the user already moved on, say into another menu, leave it.)
+ */
+export function focusIsFree(): boolean {
+  const active = document.activeElement;
+  return active === null || active === document.body;
+}
+
+/**
  * "New item" with the kind choice. Ctrl+N opens it (the menu is controlled by the vault
  * state), so there is exactly one of these on screen: in the sidebar or the icon rail.
  */
@@ -38,7 +47,7 @@ export function NewItemMenu({ compact }: { compact: boolean }) {
   );
 
   return (
-    <DropdownMenu open={newMenuOpen} onOpenChange={actions.setNewMenuOpen}>
+    <DropdownMenu modal={false} open={newMenuOpen} onOpenChange={actions.setNewMenuOpen}>
       {compact ? (
         <Tip label="New item" shortcut="Ctrl+N" side="right">
           <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
@@ -56,7 +65,8 @@ export function NewItemMenu({ compact }: { compact: boolean }) {
           if (!chose.current) return;
           chose.current = false;
           event.preventDefault();
-          actions.focusEditor();
+          // Unless the user has already moved on (e.g. clicked into the editor).
+          if (focusIsFree()) actions.focusEditor();
         }}
         onKeyDown={(event) => {
           // 1–5 pick a kind directly (the hints on the right).
