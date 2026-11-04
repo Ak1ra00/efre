@@ -276,6 +276,17 @@ cargo test --workspace
 cargo deny check && cargo audit
 ```
 Run `npm run build` once before the `cargo` commands, because the app embeds `dist/`.
+
+### Making a release
+1. Set the same version in `src-tauri/tauri.conf.json`, `package.json` and the
+   workspace `Cargo.toml`.
+2. Either push a tag `v<version>`, or open **Actions → Release → Run workflow** on
+   `main`.
+
+The workflow builds the installer with the offline WebView2 installer inside, and
+checks that installer's Microsoft signature. It runs the smoke and installer tests on
+the exact file it publishes, then creates the GitHub release with the installer and
+`SHA256SUMS.txt`.
 The simulated YubiKey exists only in tests and the mock preview. CI proves that a
 release build can't include it.
 

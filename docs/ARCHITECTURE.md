@@ -853,7 +853,8 @@ See §3.3 for what it doesn't block.
       need testing on every target.
 - **Installer:** NSIS with `installMode: currentUser`, so no admin. The installer
   is unsigned for now.
-  - **Releases** (`.github/workflows/release.yml`, on a `v*` tag) merge
+  - **Releases** (`.github/workflows/release.yml`) run when a `v*` tag is pushed, or
+    by hand from the Actions tab (which then creates the `v<version>` tag). They merge
     `src-tauri/tauri.release.conf.json`, which sets `webviewInstallMode` to
     `offlineInstaller`. The installer then carries Microsoft's offline WebView2
     Runtime installer, about 180 MB.
