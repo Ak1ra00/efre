@@ -1,18 +1,15 @@
 <p align="center">
-  <img src="src-tauri/icons/128x128.png" width="96" height="96" alt="">
-</p>
-
-<h1 align="center">efre</h1>
-
-<p align="center">
-  <em>efre</em> is Tamazight for <em>cave</em>.<br>
-  An offline password vault for Windows that opens only with your YubiKey.
+  <img src="docs/images/banner.svg" width="880" alt="efre, ⵉⴼⵔⵉ: Tamazight for cave. An offline password vault for Windows that opens only with your YubiKey.">
 </p>
 
 <p align="center">
   <a href="https://github.com/Ak1ra00/efre/actions/workflows/ci.yml"><img src="https://github.com/Ak1ra00/efre/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-8b93ff" alt="MIT license"></a>
 </p>
+
+**efre** (ⵉⴼⵔⵉ, *ifri*) is the Tamazight word for *cave*. It's an offline password vault
+for Windows: a closed place on your own PC that opens only with your YubiKey.
+[About the name ↓](#the-name-ⵉⴼⵔⵉ)
 
 ![The efre vault: sidebar, item list and an open login](docs/images/screenshot-vault.png)
 
@@ -78,6 +75,8 @@ Do this for **both** keys.
 The first time you open efre, a short wizard walks you through setup. Its steps are:
 welcome → how efre works → enroll the **primary** key → enroll the **backup** key →
 done.
+
+![The setup wizard's welcome screen, with the name ⵉⴼⵔⵉ](docs/images/screenshot-welcome.png)
 
 ![Enrolling a key in the setup wizard](docs/images/screenshot-setup.png)
 
@@ -273,11 +272,25 @@ release build can't include it.
 | `src` | The React interface. |
 | `docs` | [Architecture](docs/ARCHITECTURE.md), [IPC contract](docs/IPC.md), [frontend guide](docs/FRONTEND.md), and the hardware and app test checklists. |
 
+## The name: ⵉⴼⵔⵉ
+
+efre comes from **Tamazight**, the language of the Amazigh people of North Africa. In
+**Tifinagh**, the Amazigh script, the word is written **ⵉⴼⵔⵉ** (*ifri*, also spelled
+*efre*). It means *cave* or *cavern*. The plural is **ⵉⴼⵔⴰⵏ** (*ifran*).
+
+A cave keeps what matters out of sight, and only those who know the way in can reach
+it. That's the idea behind efre: your secrets stay in one place on your own PC, and
+only your key opens it.
+
+The app carries the name in Tifinagh too: on the welcome screen, next to the name in
+the sidebar, on the unlock screen and in Settings → Security. It is set in Noto Sans
+Tifinagh, which is bundled with the app.
+
 ## License
 
 efre is released under the [MIT License](LICENSE). Bundled third-party material,
-including the EFF wordlist, the Inter font and the Lucide icons, is listed in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+including the EFF wordlist, the Inter and Noto Sans Tifinagh fonts and the Lucide
+icons, is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 YubiKey is a trademark of Yubico AB. efre is an independent project, not affiliated
 with Yubico.

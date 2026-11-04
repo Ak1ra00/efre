@@ -12,6 +12,7 @@ import {
 import { type ReactNode, type RefObject, useId, useState } from "react";
 
 import { EfreMark } from "@/components/brand/logo";
+import { TifinaghName } from "@/components/brand/tifinagh";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -83,7 +84,12 @@ export function WelcomeStep({
     <StepFrame
       centered
       headingRef={headingRef}
-      top={<EfreMark className="mb-2 size-14" />}
+      top={
+        <div className="mb-2 flex flex-col items-center gap-1.5">
+          <EfreMark className="size-14" />
+          <TifinaghName className="text-lg text-fg-muted" />
+        </div>
+      }
       title="Welcome to efre"
       description="A private vault on this PC that opens only with your YubiKey."
       primary={
@@ -110,6 +116,10 @@ export function WelcomeStep({
           <Need icon={CircleCheck}>About two minutes</Need>
         </ul>
       </div>
+      <p className="text-center text-[13px] text-pretty text-fg-subtle">
+        The name: <span className="text-fg-muted">efre</span>, <TifinaghName className="text-fg-muted" /> (ifri),
+        means “cave” in Tamazight, the language of the Amazigh people.
+      </p>
     </StepFrame>
   );
 }

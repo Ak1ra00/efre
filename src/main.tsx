@@ -1,4 +1,5 @@
 import "@fontsource-variable/inter";
+import "@fontsource/noto-sans-tifinagh/tifinagh-400.css";
 import "./index.css";
 
 import { StrictMode } from "react";

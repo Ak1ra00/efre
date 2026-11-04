@@ -15,6 +15,7 @@ import {
 import { useAppStatus } from "@/app/app-status";
 import { useUIState } from "@/app/ui-state";
 import { EfreMark } from "@/components/brand/logo";
+import { TifinaghName } from "@/components/brand/tifinagh";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -90,6 +91,7 @@ function FullSidebar() {
       <div className="flex h-14 shrink-0 items-center gap-2.5 pr-2 pl-4">
         <EfreMark className="size-6" />
         <span className="text-sm font-semibold tracking-tight">efre</span>
+        <TifinaghName className="text-sm text-fg-subtle" title="ⵉⴼⵔⵉ (ifri): “cave” in Tamazight" />
         <Tip label="Collapse sidebar">
           <Button
             variant="ghost"

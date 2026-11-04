@@ -17,6 +17,14 @@ or embeds the material below, each under its own license.
 - **Copyright:** 2016 The Inter Project Authors (<https://github.com/rsms/inter>).
 - **License:** [SIL Open Font License 1.1](https://openfontlicense.org).
 
+### Noto Sans Tifinagh typeface
+- **Used by:** the name ⵉⴼⵔⵉ in the user interface, bundled through
+  `@fontsource/noto-sans-tifinagh` (the Tifinagh subset only).
+- **Copyright:** 2022 The Noto Project Authors (<https://github.com/notofonts/tifinagh>).
+- **License:** [SIL Open Font License 1.1](https://openfontlicense.org).
+- **Also used for:** the ⵉⴼⵔⵉ lettering in `docs/images/banner.svg`, converted to
+  outlines.
+
 ### Lucide icons
 - **Used by:** the user interface, through `lucide-react`.
 - **Copyright:** Lucide Contributors.

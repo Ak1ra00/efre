@@ -895,6 +895,7 @@ published.
 | `motion` | 150–200 ms animations, respecting `prefers-reduced-motion` |
 | `lucide-react` | Icons, as tree-shaken SVG components |
 | `@fontsource-variable/inter` | Bundled Inter variable font |
+| `@fontsource/noto-sans-tifinagh` | Bundled Tifinagh subset (18 KB, OFL) for the name ⵉⴼⵔⵉ (*ifri*, "cave" in Tamazight). Windows' Ebrima is the fallback. |
 | `@tanstack/react-virtual` | Virtualized item list |
 | `react-markdown` 10 | Secure-note Markdown. It renders React elements, never `innerHTML`; raw HTML is skipped, images aren't rendered, and links are plain text. |
 | `@tauri-apps/api` | IPC |

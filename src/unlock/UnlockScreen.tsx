@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { useAppStatus, useStatus } from "@/app/app-status";
 import { EfreMark } from "@/components/brand/logo";
+import { TifinaghName } from "@/components/brand/tifinagh";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { ipc } from "@/lib/ipc";
@@ -85,6 +86,8 @@ export function UnlockScreen() {
 
       <footer className="flex shrink-0 items-center justify-center gap-2 pb-6 text-[13px] text-fg-subtle">
         <EfreMark className="size-4" />
+        <TifinaghName className="text-fg-muted" />
+        <span aria-hidden="true">·</span>
         <span>efre keeps everything on this PC.</span>
       </footer>
 

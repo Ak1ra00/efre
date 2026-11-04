@@ -2,6 +2,7 @@
 import { CircleCheck, Info, RotateCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { TifinaghName } from "@/components/brand/tifinagh";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -105,6 +106,11 @@ function Details({ info }: { info: SecurityInfo }) {
           ))}
         </ul>
       </SettingsGroup>
+
+      <p className="text-[13px] text-fg-subtle">
+        efre, <TifinaghName className="text-fg-muted" /> (ifri), means “cave” in Tamazight. Open source under
+        the MIT License.
+      </p>
     </>
   );
 }
