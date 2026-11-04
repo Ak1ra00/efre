@@ -36,11 +36,18 @@ windows = { workspace = true, features = [
   # system_events.rs: suspend callback, session notifications, hidden window
   "Win32_System_Power",
   "Win32_System_RemoteDesktop",
-  "Win32_System_LibraryLoader",
+  "Win32_System_LibraryLoader", # also hardening.rs: SetDefaultDllDirectories
   "Win32_UI_WindowsAndMessaging",
   "Win32_Graphics_Gdi", # WNDCLASSEXW / RegisterClassExW
   # GetSystemWindowsDirectoryW: launch Explorer by full path ("Open vault folder").
   "Win32_System_SystemInformation",
+  # hardening.rs (ARCHITECTURE §8.1): error mode, WER exclusion, WEBVIEW2_* variables,
+  # image-load mitigation policy. Threading also gives platform.rs CREATE_DEFAULT_ERROR_MODE.
+  "Win32_System_Diagnostics_Debug",
+  "Win32_System_ErrorReporting",
+  "Win32_System_Environment",
+  "Win32_System_SystemServices",
+  "Win32_System_Threading",
 ] }
 # The WebView2 settings Tauri doesn't expose: browser accelerator keys and the default
 # context menu (print, save as). Already in the graph through tauri/wry: same version.

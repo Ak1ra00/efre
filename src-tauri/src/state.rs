@@ -22,6 +22,7 @@ use crate::dto::{
     KeyStepEvent, LockReason, SecurityInfo, Settings, WebText, item_id, key_infos, slot_id,
 };
 use crate::error::{IpcError, IpcResult};
+use crate::hardening::Hardening;
 use crate::lock::{Clock, LockTriggers};
 use crate::paths::VaultPaths;
 use crate::platform;
@@ -68,6 +69,8 @@ pub(crate) struct Environment {
     pub(crate) authenticator: Result<Arc<dyn Authenticator>, String>,
     pub(crate) api_version: Option<u32>,
     pub(crate) paths: Result<VaultPaths, String>,
+    /// What the startup hardening achieved (ARCHITECTURE §8.1).
+    pub(crate) hardening: Hardening,
 }
 
 enum VaultSlot {
@@ -680,6 +683,7 @@ impl AppState {
             presence: &presence,
             system_events: &system_events,
             browser_ui: &browser_ui,
+            hardening: &self.env.hardening,
         })
     }
 

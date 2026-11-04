@@ -11,6 +11,7 @@ mod dto;
 mod error;
 #[cfg(test)]
 mod flow_tests;
+mod hardening;
 mod lock;
 mod monitors;
 mod navigation;
@@ -27,6 +28,7 @@ use std::sync::Arc;
 use efre_authn::Authenticator;
 use tauri::{AppHandle, Manager as _, RunEvent, WebviewWindow};
 
+use crate::hardening::Hardening;
 use crate::state::{AppState, Environment};
 
 /// Shown when Windows' security key API is missing or older than efre needs (API 4,
@@ -78,7 +80,7 @@ fn authenticator_for(_window: &WebviewWindow) -> AuthenticatorChoice {
     (Err("efre runs on Windows 10 and 11 only.".to_owned()), None)
 }
 
-fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+fn setup(app: &mut tauri::App, hardening: Hardening) -> Result<(), Box<dyn std::error::Error>> {
     let handle = app.handle().clone();
     // Before any window exists: the folder check must see `%LOCALAPPDATA%\efre` before
     // WebView2 creates its data folder inside it.
@@ -93,6 +95,7 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             authenticator,
             api_version,
             paths,
+            hardening,
         },
         Box::new(clipboard::Clipboard::new()),
         Box::new(ui::TauriUi::new(&handle)),
@@ -111,6 +114,10 @@ fn shut_down(handle: &AppHandle, close: bool) {
 }
 
 fn main() {
+    // First of all, while efre is single-threaded and before Tauri creates a window or
+    // loads WebView2 (ARCHITECTURE §8.1). Never fatal: Settings > Security lists what
+    // didn't apply.
+    let hardening = hardening::apply();
     let app = tauri::Builder::default()
         // Must be the first plugin: a second launch just focuses the existing window.
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
@@ -153,7 +160,7 @@ fn main() {
             commands::open_vault_folder,
             commands::security_info,
         ])
-        .setup(setup)
+        .setup(move |app| setup(app, hardening))
         .build(tauri::generate_context!())
         .expect("efre failed to start");
 
