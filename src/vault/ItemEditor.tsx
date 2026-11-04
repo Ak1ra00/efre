@@ -150,12 +150,24 @@ function EditorForm({ initial, itemId }: { initial: FormState; itemId: string | 
     },
     [actions],
   );
+  // Focus moves on the next task: the menu that opened the editor (or added the field)
+  // must close first, or its focus trap would pull focus straight back.
   useEffect(() => {
-    titleRef.current?.focus();
+    const timer = setTimeout(() => {
+      titleRef.current?.focus();
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
   useEffect(() => {
     if (focusKey === null) return;
-    formRef.current?.querySelector<HTMLElement>(`[data-field-key="${focusKey}"] [data-autofocus]`)?.focus();
+    const timer = setTimeout(() => {
+      formRef.current?.querySelector<HTMLElement>(`[data-field-key="${focusKey}"] [data-autofocus]`)?.focus();
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [focusKey]);
 
   const update = (key: string, patch: Partial<FormField>) => {

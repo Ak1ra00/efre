@@ -20,7 +20,7 @@ import type { ItemMeta } from "@/lib/ipc-types";
 import { ITEM_KIND_ORDER, ITEM_KINDS } from "@/lib/items";
 import { cn } from "@/lib/utils";
 
-import { formatDateTime, formatRelativeShort } from "./format";
+import { formatDateTime, formatRelative, formatRelativeShort } from "./format";
 import { KindIcon } from "./KindIcon";
 import { highlightRuns, KIND_NOUN_PLURALS, type SearchHit, SORT_OPTIONS, type SortKey, viewLabel } from "./search";
 import { useNow } from "./use-layout";
@@ -372,10 +372,20 @@ function ItemRow({ id, hit, start, index, count, selected, date, now, onSelect, 
   const { item } = hit;
   const subtitle = item.username ?? ITEM_KINDS[item.kind].label;
   const when = date === null ? null : dateOf(item, date);
+  // One clear name for screen readers: "GitHub, octocat, favorite, Updated 3d ago".
+  const name = [
+    item.title,
+    subtitle,
+    item.favorite ? "favorite" : null,
+    when === null || date === null ? null : `${DATE_PREFIX[date]} ${formatRelative(when, now)}`,
+  ]
+    .filter((part) => part !== null)
+    .join(", ");
   return (
     <div
       id={id}
       role="option"
+      aria-label={name}
       aria-selected={selected}
       aria-posinset={index + 1}
       aria-setsize={count}
@@ -403,12 +413,10 @@ function ItemRow({ id, hit, start, index, count, selected, date, now, onSelect, 
         </div>
         <div className="flex shrink-0 flex-col items-end justify-center gap-1 self-stretch py-2">
           {when === null || date === null ? null : (
-            <span className="text-xs text-fg-subtle tabular-nums" title={formatDateTime(when)}>
-              <span className="sr-only">{DATE_PREFIX[date]} </span>
+            <span aria-hidden="true" className="text-xs text-fg-subtle tabular-nums" title={formatDateTime(when)}>
               {formatRelativeShort(when, now)}
             </span>
           )}
-          {item.favorite ? <span className="sr-only">, favorite</span> : null}
           {onToggleFavorite === null ? (
             item.favorite ? (
               <Star aria-hidden="true" className="size-3.5 fill-current text-accent-text" />
