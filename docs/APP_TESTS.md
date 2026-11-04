@@ -54,7 +54,8 @@ Tick each line. Write down anything that looks or feels wrong, even small things
       Identity, and Custom with every field kind (text, hidden, URL, email, phone,
       date, multiline).
 - [ ] Hidden values show as dots.
-- [ ] **Reveal** shows a value, and it hides itself again after about 10 s.
+- [ ] **Reveal** shows a value with a countdown, and it hides itself again after 10 s.
+      It also hides at once when you switch to another window.
 - [ ] Copy the password and the username, from the buttons, Ctrl+C and Ctrl+B. A toast
       says it's copied and when the clipboard clears.
 - [ ] Edit an item, change one field, save, and reopen it. Untouched hidden fields
@@ -66,7 +67,8 @@ Tick each line. Write down anything that looks or feels wrong, even small things
 - [ ] Ctrl+F focuses search. Fuzzy matches work (typos, partial words) and feel
       instant.
 - [ ] Ctrl+K opens the palette, and every action can be run from it.
-- [ ] Ctrl+N starts a new item, Esc goes back, and `?` shows the shortcut sheet.
+- [ ] Ctrl+N opens the new-item menu (1–5 pick a kind), Esc goes back or closes, and
+      `?` shows the shortcut sheet.
 - [ ] Narrow the window: the panes collapse cleanly, and nothing is cut off.
 - [ ] Everything can be done with the keyboard only (Tab, arrows, Enter, Esc), and the
       focus ring is always visible.
@@ -75,6 +77,8 @@ Tick each line. Write down anything that looks or feels wrong, even small things
 - [ ] Generate passwords and passphrases. Change the length and the options.
 - [ ] The strength label changes as expected: Weak, Fair, Strong, Very strong.
 - [ ] Copy the result and paste it into Notepad: it matches what was shown.
+- [ ] In the item editor, **Generate** on a password field, then **Use**: the field is
+      filled. Save, reveal, and check it matches.
 
 ### Clipboard
 - [ ] Copy a password and paste it within the timer: it works.
