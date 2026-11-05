@@ -11,6 +11,10 @@
 for Windows: a closed place on your own PC that opens only with your YubiKey.
 [About the name ↓](#the-name-ⵉⴼⵔⵉ)
 
+**[Website](https://ak1ra00.github.io/efre/)** ·
+**[Download](https://github.com/Ak1ra00/efre/releases/latest)** ·
+**[Security](SECURITY.md)**
+
 ![The efre vault: sidebar, item list and an open login](docs/images/screenshot-vault.png)
 
 ## Why efre

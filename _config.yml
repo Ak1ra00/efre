@@ -1,0 +1,28 @@
+# GitHub Pages builds this repository with Jekyll from main's root.
+#
+# The website is site/index.html, which publishes itself at the site root
+# (permalink: /). It loads its own files from site/assets/ and screenshots from
+# docs/images/. Everything below is left out of the published site: the app's
+# source, its build files, and the root index.html, which is the app's Vite entry
+# point rather than a web page.
+exclude:
+  - index.html
+  - src/
+  - src-tauri/
+  - crates/
+  - scripts/
+  - node_modules/
+  - dist/
+  - target/
+  - Cargo.toml
+  - Cargo.lock
+  - package.json
+  - package-lock.json
+  - tsconfig.json
+  - vite.config.ts
+  - eslint.config.js
+  - clippy.toml
+  - rustfmt.toml
+  - rust-toolchain.toml
+  - deny.toml
+  - AGENTS.md

@@ -1,0 +1,483 @@
+---
+# GitHub Pages builds this repository with Jekyll from main (see _config.yml at the
+# repository root). This page is published at the site root.
+permalink: /
+layout: null
+sitemap: false
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>efre ⵉⴼⵔⵉ · The vault that opens only with your YubiKey</title>
+<meta name="description" content="efre is a free, offline password vault for Windows. No master password, no account, no cloud: it opens only with your YubiKey, its PIN and a touch.">
+<meta name="theme-color" content="#0c0d10">
+<meta property="og:type" content="website">
+<meta property="og:title" content="efre ⵉⴼⵔⵉ · The vault that opens only with your YubiKey">
+<meta property="og:description" content="A free, offline password vault for Windows. No master password, no account, no cloud.">
+<meta property="og:url" content="https://ak1ra00.github.io/efre/">
+<meta property="og:image" content="https://ak1ra00.github.io/efre/site/assets/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="site/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="site/assets/icon-128.png">
+<link rel="preload" href="site/assets/fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="site/assets/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="site/assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="efre, home">
+      <img src="site/assets/favicon.svg" alt="" width="28" height="28">
+      <span>efre</span>
+      <span class="tfng" lang="ber-Tfng" aria-hidden="true">ⵉⴼⵔⵉ</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#security">Security</a>
+      <a href="#name">The name</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/Ak1ra00/efre">GitHub</a>
+    </nav>
+    <a class="button button-primary button-small" href="https://github.com/Ak1ra00/efre/releases/latest">Download</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div class="hero-top">
+        <div class="hero-copy">
+          <p class="eyebrow">Offline password vault for Windows</p>
+          <h1 id="hero-title">The vault that opens <em>only with your YubiKey.</em></h1>
+          <p class="lead">efre keeps your passwords, notes and cards in one encrypted file on your PC. There is <strong>no master password, no account and no cloud.</strong> Plug in your key, enter its PIN and touch it to get in.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://github.com/Ak1ra00/efre/releases/latest">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+              Download for Windows
+            </a>
+            <a class="button button-ghost" href="#how">See how it works</a>
+          </div>
+          <p class="hero-meta"><span>Version 0.1.1</span><span>Windows 11</span><span>Free and open source, MIT</span></p>
+        </div>
+        <div class="carving" aria-hidden="true">
+          <span class="glyphs" lang="ber-Tfng">ⵉⴼⵔⵉ</span>
+          <span class="gloss"><i>ifri</i> · cave, in Tamazight</span>
+        </div>
+      </div>
+
+      <div class="mouth">
+        <svg class="strata" viewBox="0 0 1400 700" width="1400" height="700" aria-hidden="true" focusable="false">
+          <path d="M440 700A260 300 0 0 1 960 700" stroke-opacity="0.95"/>
+          <path d="M380 700A320 360 0 0 1 1020 700" stroke-opacity="0.8"/>
+          <path d="M315 700A385 420 0 0 1 1085 700" stroke-opacity="0.65"/>
+          <path d="M245 700A455 480 0 0 1 1155 700" stroke-opacity="0.5"/>
+          <path d="M170 700A530 540 0 0 1 1230 700" stroke-opacity="0.38"/>
+          <path d="M90 700A610 600 0 0 1 1310 700" stroke-opacity="0.27"/>
+          <path d="M5 700A695 660 0 0 1 1395 700" stroke-opacity="0.18"/>
+        </svg>
+        <figure class="window" style="margin:0">
+          <div class="window-bar" aria-hidden="true">
+            <img src="site/assets/favicon.svg" alt="" width="16" height="16">
+            <span>efre</span>
+            <span class="window-controls">
+              <span><svg viewBox="0 0 10 10"><path d="M1 5h8"/></svg></span>
+              <span><svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8"/></svg></span>
+              <span><svg viewBox="0 0 10 10"><path d="M1 1l8 8M9 1 1 9"/></svg></span>
+            </span>
+          </div>
+          <img src="docs/images/screenshot-vault.png" width="2560" height="1600" fetchpriority="high"
+               alt="The efre window: a sidebar with item kinds and tags, a list of items, and an open GitHub login whose password is revealed with a countdown before it hides again.">
+        </figure>
+      </div>
+    </div>
+
+    <div class="facts">
+      <div class="wrap">
+        <ul>
+          <li><b>0</b><span>network connections, checked on every build</span></li>
+          <li><b>256-bit</b><span>vault key, sealed with XChaCha20-Poly1305</span></li>
+          <li><b>2</b><span>YubiKeys: one for every day, one as backup</span></li>
+          <li><b>10 s</b><span>a revealed password stays on screen</span></li>
+          <li><b>30 s</b><span>until a copied password leaves the clipboard</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="unlock-title">
+    <div class="wrap unlock">
+      <div>
+        <div class="section-head" style="margin-bottom:0">
+          <p class="eyebrow">Opening the vault</p>
+          <h2 id="unlock-title">No master password to guess, phish or forget.</h2>
+          <p class="lead">The secret that opens efre lives inside your YubiKey and never leaves it. Windows asks for the key's PIN, you touch the key, and the vault opens.</p>
+        </div>
+        <ol class="steps">
+          <li><div><h3>Plug in your YubiKey</h3><p>Either of your enrolled keys works.</p></div></li>
+          <li><div><h3>Enter its PIN</h3><p>Or use your fingerprint on a YubiKey Bio. After 8 wrong PINs, the key locks itself.</p></div></li>
+          <li><div><h3>Touch the key</h3><p>The key hands efre its <code>hmac-secret</code>, which unwraps your vault key. Nothing else can.</p></div></li>
+        </ol>
+      </div>
+      <div class="key-art" aria-hidden="true">
+        <svg viewBox="0 0 280 160" fill="none">
+          <defs>
+            <linearGradient id="kbody" x1="0" y1="46" x2="0" y2="114" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#262830"/><stop offset="1" stop-color="#16171c"/></linearGradient>
+            <linearGradient id="kplug" x1="0" y1="64" x2="0" y2="96" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#62666f"/><stop offset="1" stop-color="#33353c"/></linearGradient>
+            <radialGradient id="kpad" cx="122" cy="72" r="29" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3b4080"/><stop offset="1" stop-color="#23264d"/></radialGradient>
+            <radialGradient id="kshadow" cx="140" cy="132" r="110" gradientTransform="matrix(1 0 0 0.12 0 116)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#000" stop-opacity="0.6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+          </defs>
+          <ellipse cx="140" cy="132" rx="112" ry="13" fill="url(#kshadow)"/>
+          <circle class="ring" cx="122" cy="80" r="23" stroke="#8b93ff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+          <circle class="ring later" cx="122" cy="80" r="23" stroke="#8b93ff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+          <rect x="214" y="64" width="36" height="32" rx="8" fill="url(#kplug)"/>
+          <rect x="214.75" y="64.75" width="34.5" height="30.5" rx="7.25" stroke="#fff" stroke-opacity="0.1" stroke-width="1.5"/>
+          <rect x="225" y="74" width="19" height="12" rx="5" fill="#111216"/>
+          <rect x="30" y="46" width="192" height="68" rx="22" fill="url(#kbody)"/>
+          <rect x="30.75" y="46.75" width="190.5" height="66.5" rx="21.25" stroke="#3b3e47" stroke-width="1.5"/>
+          <path d="M54 48.5H198" stroke="#fff" stroke-opacity="0.08" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="56" cy="80" r="9" fill="#0c0d10" stroke="#3b3e47" stroke-width="1.5"/>
+          <circle cx="122" cy="80" r="23" fill="url(#kpad)" stroke="#8b93ff" stroke-opacity="0.7" stroke-width="1.5"/>
+          <g stroke="#b3b9ff" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round">
+            <path d="M109 87A15 15 0 0 1 136 82"/>
+            <path d="M113 90A10 10 0 1 1 132 84"/>
+            <path d="M118 91A5 5 0 1 1 127 82V89"/>
+            <path d="M123 80V86"/>
+          </g>
+          <rect class="light" x="181" y="77" width="12" height="6" rx="3" fill="#a7adff"/>
+          <rect x="177" y="73" width="20" height="14" rx="7" stroke="#a7adff" stroke-opacity="0.14" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap"><div class="weave" role="presentation"></div></div>
+
+  <section class="section" aria-labelledby="inside-title">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Inside</p>
+        <h2 id="inside-title">Everything a vault needs. Nothing that phones home.</h2>
+      </div>
+
+      <ul class="trio">
+        <li><h3>Every kind of secret</h3><p>Logins, secure notes in Markdown, cards, identities, and custom items with any fields you need.</p></li>
+        <li><h3>Find anything</h3><p>Fuzzy search ignores typos and accents, so <code>nwb</code> finds Northwind Bank. Tags, favorites and three sort orders.</p></li>
+        <li><h3>Reveal and copy safely</h3><p>A hidden field shows for 10 seconds. Copies skip clipboard history and cloud sync, and clear after 30 seconds.</p></li>
+        <li><h3>Undo mistakes</h3><p>Deleted items go to the trash, with an undo right away and a restore any time later.</p></li>
+      </ul>
+
+      <div class="chamber" style="margin-top:clamp(64px,9vw,112px)">
+        <div class="chamber-copy">
+          <p class="eyebrow">Command palette</p>
+          <h3>Keyboard first</h3>
+          <p class="muted">Every action is one shortcut or one search away. Press <kbd>Ctrl</kbd> <kbd>K</kbd> and type what you want to do.</p>
+          <div class="keys">
+            <span class="combo"><kbd>Ctrl</kbd><kbd>N</kbd> new item</span>
+            <span class="combo"><kbd>Ctrl</kbd><kbd>F</kbd> search</span>
+            <span class="combo"><kbd>Ctrl</kbd><kbd>C</kbd> copy password</span>
+            <span class="combo"><kbd>Ctrl</kbd><kbd>B</kbd> copy username</span>
+            <span class="combo"><kbd>Ctrl</kbd><kbd>L</kbd> lock</span>
+            <span class="combo"><kbd>?</kbd> all shortcuts</span>
+          </div>
+        </div>
+        <figure class="panel panel-palette">
+          <img src="site/assets/shots/palette.png" width="1024" height="528" loading="lazy"
+               alt="The Ctrl+K command palette filtered by the word copy, offering Copy password with Ctrl+C, Copy username with Ctrl+B, and Open vault folder.">
+        </figure>
+      </div>
+
+      <div class="chamber flip">
+        <div class="chamber-copy">
+          <p class="eyebrow">Generator</p>
+          <h3>Strong passwords and passphrases</h3>
+          <p class="muted">Generate passwords of up to 128 characters, or passphrases from the EFF long word list. The meter shows the strength in bits of entropy, and the value is made in efre's core with your PC's secure random number generator.</p>
+        </div>
+        <div class="deck">
+          <figure class="panel">
+            <img src="site/assets/shots/generator.png" width="1024" height="1370" loading="lazy"
+                 alt="The password generator showing a 20-character password rated Very strong at 130 bits of entropy, with switches for uppercase, lowercase, digits and symbols.">
+          </figure>
+          <figure class="panel">
+            <img src="site/assets/shots/passphrase.png" width="1024" height="1306" loading="lazy"
+                 alt="The passphrase tab of the generator, building a passphrase from words of the EFF long word list, with options for the number of words, the separator, capitals and a number.">
+          </figure>
+        </div>
+      </div>
+
+      <div class="chamber">
+        <div class="chamber-copy">
+          <p class="eyebrow">Your keys</p>
+          <h3>Two keys, one vault</h3>
+          <p class="muted">Enroll a primary key and a backup. If you lose one, remove it with the other: efre makes a new vault key and re-encrypts everything, so the lost key opens nothing new.</p>
+          <ul class="ticks">
+            <li>Adding, renaming or removing a key needs a fresh PIN and touch</li>
+            <li>efre reminds you while only one key is enrolled</li>
+            <li>It won't let you remove your last key</li>
+          </ul>
+        </div>
+        <figure class="panel">
+          <img src="site/assets/shots/keys.png" width="1536" height="780" loading="lazy"
+               alt="Settings, YubiKeys section: two enrolled keys with their nicknames and enrollment dates, each with Rename and Remove buttons, and an Add key button.">
+        </figure>
+      </div>
+
+      <figure class="figure-wide">
+        <img src="docs/images/two-keys.svg" width="880" height="330" loading="lazy"
+             alt="Diagram: Key 1 and Key 2 both open the same vault. Lost a key? Unlock with the one you still have, remove the lost key in Settings, and efre re-encrypts everything.">
+      </figure>
+    </div>
+  </section>
+
+  <section class="section how" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2 id="how-title">Your key unlocks a key, which unlocks the vault.</h2>
+        <p class="lead">efre never stores anything that can open the vault on its own. Each YubiKey wraps the same random vault key under a key of its own, made from a secret the YubiKey gives only after its PIN and a touch.</p>
+      </div>
+      <figure class="diagram" style="margin:0">
+        <img src="docs/images/how-it-works.svg" width="880" height="400" loading="lazy"
+             alt="Diagram: your YubiKey, after its PIN and a touch, gives Windows Security a secret. efre's Rust core uses it to unwrap the vault key and decrypt vault.efre, which stays on your PC. The window shows titles, and a secret only when you click Reveal.">
+      </figure>
+      <ol class="flow">
+        <li><h3>Your YubiKey answers</h3><p>After the PIN and a touch, it returns a secret through Windows' WebAuthn API.</p></li>
+        <li><h3>efre derives a key</h3><p>HKDF-SHA256 turns that secret into a key-encryption key for this YubiKey only.</p></li>
+        <li><h3>The vault key unwraps</h3><p>That key unwraps the random 256-bit vault key, and HMAC-SHA256 checks the header and the item list.</p></li>
+        <li><h3>Items decrypt in the core</h3><p>XChaCha20-Poly1305 decrypts items inside efre's Rust core. The window sees a password only when you reveal it.</p></li>
+      </ol>
+      <ul class="specs" aria-label="Technical details">
+        <li>FIDO2 hmac-secret</li>
+        <li>credProtect level 3</li>
+        <li>HKDF-SHA256</li>
+        <li>XChaCha20-Poly1305</li>
+        <li>HMAC-SHA256</li>
+        <li>256-byte padding</li>
+        <li>SQLite · WAL · secure_delete</li>
+        <li>WebAuthn API 4+</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="zero-title">
+    <div class="wrap zero">
+      <p class="zero-number" aria-hidden="true">0<small>network connections</small></p>
+      <div class="chamber-copy">
+        <p class="eyebrow">Offline by design</p>
+        <h2 id="zero-title">Nothing leaves your PC.</h2>
+        <p class="muted">efre has no network code at all: no account, no sync, no telemetry and no update checks. Every build is started on Windows by the project's CI, which fails if efre or its window opens a single socket, even to the PC itself.</p>
+        <figure class="terminal" style="margin:0">
+          <figcaption class="terminal-bar">From the CI log of v0.1.1</figcaption>
+<pre><span class="key">--- efre smoke test ---</span>
+WebView2 processes:      6
+--host-resolver-rules:   browser=True, network=True
+screen heading (UIA):    Welcome to efre
+network samples:         26, <span class="hl">socket observations: 0</span>
+<span class="hl">smoke test: OK</span></pre>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="security" aria-labelledby="security-title">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Security</p>
+        <h2 id="security-title">What efre protects, and where it stops.</h2>
+        <p class="lead">A vault should be honest about its limits. efre lists them in its own settings, too.</p>
+      </div>
+      <div class="honest">
+        <div class="ledger good">
+          <h3>It protects you from</h3>
+          <ul>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span><strong>Someone who copies your vault file.</strong> Without an enrolled key and its PIN, they can't decrypt anything.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span><strong>Tampering.</strong> Changing, deleting or swapping any part of the file is detected, and efre refuses to open it.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span><strong>A stolen YubiKey.</strong> It still needs its PIN, which locks after 8 wrong tries. Remove it, and it opens nothing new.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span><strong>Phishing sites.</strong> efre's credential uses the ID <code>efre:</code>, which no website can ask for.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span><strong>Screenshots.</strong> efre's window is hidden from screenshots and screen recording.</span></li>
+          </ul>
+        </div>
+        <div class="ledger limits">
+          <h3>It can't protect you from</h3>
+          <ul>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg><span><strong>Malware running while the vault is open.</strong> It can read the screen and efre's memory, as it could any app's.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg><span><strong>An older copy of the whole file.</strong> Restoring a complete older vault file can't be detected.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg><span><strong>Losing every key.</strong> There is no recovery code. Enroll a backup key.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg><span><strong>Cameras and some remote-desktop tools.</strong> Screenshot blocking doesn't stop them.</span></li>
+          </ul>
+        </div>
+      </div>
+      <figure class="panel panel-security">
+        <img src="site/assets/shots/security.png" width="1536" height="1290" loading="lazy"
+             alt="Settings, Security section: the app version, vault format, WebAuthn API version and number of keys, a list of active protections with green checks, and honest limits with amber marks.">
+        <figcaption>Settings › Security lists what's active on your PC, and the limits.</figcaption>
+      </figure>
+      <p class="honest-more"><a href="https://github.com/Ak1ra00/efre/blob/main/SECURITY.md">Read the full security notes</a></p>
+    </div>
+  </section>
+
+  <section class="section name" id="name" aria-labelledby="name-title">
+    <div class="wrap name-grid">
+      <div class="name-word">
+        <span class="tfng" lang="ber-Tfng" aria-hidden="true">ⵉⴼⵔⵉ</span>
+        <dl>
+          <dt>Read</dt><dd><i>ifri</i>, also written <i>efre</i></dd>
+          <dt>Means</dt><dd>cave, cavern</dd>
+          <dt>Plural</dt><dd><span class="tfng" lang="ber-Tfng">ⵉⴼⵔⴰⵏ</span> <i>ifran</i></dd>
+          <dt>Language</dt><dd>Tamazight, written in Tifinagh</dd>
+        </dl>
+      </div>
+      <div class="chamber-copy">
+        <p class="eyebrow">The name</p>
+        <h2 id="name-title">Named for a cave.</h2>
+        <p class="muted">efre comes from Tamazight, the language of the Amazigh people of North Africa. A cave keeps what matters out of sight, and only those who know the way in can reach it. That's the idea behind efre: your secrets stay in one place on your own PC, and only your key opens it.</p>
+        <figure class="panel panel-welcome">
+          <img src="site/assets/shots/welcome.png" width="1248" height="1160" loading="lazy"
+               alt="efre's welcome screen with the name ⵉⴼⵔⵉ under the logo, the list of what you'll need, and a line explaining that efre means cave in Tamazight.">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="install" aria-labelledby="install-title">
+    <div class="wrap install">
+      <div>
+        <div class="section-head" style="margin-bottom:0">
+          <p class="eyebrow">Install</p>
+          <h2 id="install-title">Ready in a few minutes.</h2>
+        </div>
+        <ol class="steps">
+          <li><div><h3>Download the installer</h3><p>From the latest release on GitHub. It's one file with everything efre needs.</p></div></li>
+          <li>
+            <div>
+              <h3>Check it</h3>
+              <p>Optional, but worth a few seconds: compare its SHA-256 with the one on the release page.</p>
+              <div class="code" style="margin-top:10px">
+                <code id="hash-cmd">(Get-FileHash .\efre_0.1.1_x64-setup.exe -Algorithm SHA256).Hash</code>
+                <button class="copy" type="button" data-copy="hash-cmd">Copy</button>
+              </div>
+            </div>
+          </li>
+          <li><div><h3>Run it</h3><p>SmartScreen warns because the installer isn't code-signed yet: choose More info, then Run anyway. There's no admin prompt, and nothing is downloaded.</p></div></li>
+          <li><div><h3>Enroll your keys</h3><p>The setup wizard walks you through your primary key and your backup key. Each one asks for its PIN and a touch, twice.</p></div></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>You'll need</h3>
+        <ul class="need">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span><strong>Windows 11</strong> with current updates. efre needs Windows' WebAuthn API version 4 or later.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="15" height="8" rx="4"/><path d="M17 10h4v4h-4"/><circle cx="9" cy="12" r="1.6"/></svg><span><strong>Two YubiKeys with FIDO2:</strong> the YubiKey 5, Security Key or Bio series.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span><strong>A FIDO2 PIN on each key.</strong> Set it in Windows Settings › Accounts › Sign-in options › Security key.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 16 0 8 8 0 1 0-16 0"/><path d="m8 12 3 3 5-6"/></svg><span><strong>WebView2</strong> draws efre's window. It's built into Windows 11, and the installer adds it if it's missing.</span></li>
+        </ul>
+        <a class="button button-primary" href="https://github.com/Ak1ra00/efre/releases/latest" style="justify-self:start">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download efre 0.1.1
+        </a>
+        <p class="muted" style="font-size:var(--step--1)">211 MB, Windows 64-bit. SHA-256 <code>c5f5ae7e…4179db</code></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="faq-title" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq-title">Before you start</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>What happens if I lose both keys?</summary>
+          <p>Then nobody can open the vault, including you. There is no recovery code, on purpose. Keep your backup key somewhere safe, away from your PC.</p>
+        </details>
+        <details>
+          <summary>Can I sync it between computers?</summary>
+          <p>No. efre is offline by design. The vault is a single file, <code>%LOCALAPPDATA%\efre\vault.efre</code>, which you can back up or copy yourself. It opens on any PC with efre installed when one of its keys is plugged in.</p>
+        </details>
+        <details>
+          <summary>Does it work on Windows 10?</summary>
+          <p>Only if Windows reports WebAuthn API version 4 or later, which depends on its updates. efre checks when it starts and tells you if Windows is too old.</p>
+        </details>
+        <details>
+          <summary>Which security keys work?</summary>
+          <p>YubiKeys with FIDO2: the YubiKey 5 series, the Security Key series and the YubiKey Bio. efre checks a key's attestation when you enroll it.</p>
+        </details>
+        <details>
+          <summary>Why is the installer 211 MB?</summary>
+          <p>It carries Microsoft's offline WebView2 installer, so nothing is downloaded during setup. That part runs only if your PC doesn't have WebView2 yet.</p>
+        </details>
+        <details>
+          <summary>Is efre free?</summary>
+          <p>Yes. It's open source under the MIT License, with no account, no subscription and no ads.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section closing-band" aria-labelledby="closing-title">
+    <div class="wrap closing">
+      <span class="tfng closing-glyphs" lang="ber-Tfng" aria-hidden="true">ⵉⴼⵔⵉ</span>
+      <h2 id="closing-title">Your vault. Your PC. Your key.</h2>
+      <div class="hero-actions">
+        <a class="button button-primary" href="https://github.com/Ak1ra00/efre/releases/latest">Download for Windows</a>
+        <a class="button button-ghost" href="https://github.com/Ak1ra00/efre">View the source on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div style="display:grid;gap:10px">
+      <a class="brand" href="#top">
+        <img src="site/assets/favicon.svg" alt="" width="28" height="28">
+        <span>efre</span>
+        <span class="tfng" lang="ber-Tfng" aria-hidden="true">ⵉⴼⵔⵉ</span>
+      </a>
+      <p>efre is open source under the MIT License, and built with Rust, Tauri and React. This website loads nothing from other servers: no trackers, no analytics and no outside fonts.</p>
+      <p>YubiKey is a trademark of Yubico AB. efre is an independent project, not affiliated with Yubico.</p>
+    </div>
+    <nav aria-label="Project links">
+      <a href="https://github.com/Ak1ra00/efre">GitHub</a>
+      <a href="https://github.com/Ak1ra00/efre/releases">Releases</a>
+      <a href="https://github.com/Ak1ra00/efre/blob/main/SECURITY.md">Security</a>
+      <a href="https://github.com/Ak1ra00/efre/blob/main/LICENSE">License</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // Copy buttons. The text is also selectable, so a refused clipboard just selects it.
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var source = document.getElementById(button.getAttribute("data-copy"));
+      if (!source) return;
+      var text = source.textContent;
+      var done = function () {
+        button.textContent = "Copied";
+        setTimeout(function () { button.textContent = "Copy"; }, 1800);
+      };
+      var select = function () {
+        var range = document.createRange();
+        range.selectNodeContents(source);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, select);
+      } else {
+        select();
+      }
+    });
+  });
+</script>
+</body>
+</html>

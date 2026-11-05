@@ -35,6 +35,7 @@ npm run tauri build                      # unsigned NSIS installer (Windows)
 - IPC commands stay thin: validate input, call `efre-core`, map errors to stable codes.
 - TypeScript is strict, with no `any`. Never store anything in `localStorage`, `sessionStorage` or IndexedDB.
 - End each phase with green tests, clean lint, a commit, a summary, and a Windows manual-test checklist.
+- The website is `site/index.html` with `site/assets/`. GitHub Pages builds `main`'s root with Jekyll, and `_config.yml` keeps the app's files out of it. Like the app, the site loads nothing from third parties: no CDNs, trackers or outside fonts.
 
 ## Git authorship (owner's rule)
 - The repo owner is the sole author and committer of every commit. Never list an AI assistant or its vendor as an author, committer or co-author.
