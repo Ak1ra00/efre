@@ -225,6 +225,7 @@ code {
 }
 
 .brand {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -257,6 +258,7 @@ code {
 .nav-links a {
   color: var(--dust);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .nav-links a:hover {
@@ -641,6 +643,122 @@ code {
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='18' viewBox='0 0 36 18'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.4'%3E%3Cpath d='M9 2 16 9 9 16 2 9Z'/%3E%3Cpath d='M9 6 12 9 9 12 6 9Z'/%3E%3Cpath d='M18 4 22.5 9 27 4M18 14 22.5 9 27 14'/%3E%3Cpath d='M27 9h9'/%3E%3C/g%3E%3C/svg%3E")
     repeat-x center / 36px 18px;
   opacity: 0.9;
+}
+
+/* ---------------------------------------------------------------- video tour */
+
+/* The poster is local and the links only navigate: nothing loads from YouTube here. */
+.video-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.75fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: start;
+}
+
+.video-card {
+  position: relative;
+  display: block;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--seam-strong);
+  background: var(--ledge);
+  box-shadow:
+    0 30px 80px -20px rgb(0 0 0 / 0.75),
+    0 0 0 1px rgb(0 0 0 / 0.4);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease;
+}
+
+.video-card:hover {
+  border-color: var(--dust);
+  transform: translateY(-2px);
+}
+
+.video-cta {
+  position: absolute;
+  right: 3.5%;
+  bottom: 5.5%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px 9px 10px;
+  border-radius: 999px;
+  background: var(--indigo);
+  color: var(--indigo-ink);
+  font-weight: 650;
+  font-size: clamp(0.82rem, 0.7rem + 0.45vw, 1rem);
+  line-height: 1.2;
+  box-shadow: 0 14px 30px -10px rgb(0 0 0 / 0.7);
+  transition: background-color 160ms ease;
+}
+
+.video-card:hover .video-cta {
+  background: var(--indigo-light);
+}
+
+.video-cta svg {
+  width: 1.6em;
+  height: 1.6em;
+  flex: none;
+}
+
+.video-cta svg circle {
+  fill: var(--indigo-ink);
+}
+
+.video-cta svg path {
+  fill: var(--indigo-light);
+}
+
+.video-length {
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: rgb(12 13 16 / 0.16);
+  font-variant-numeric: tabular-nums;
+}
+
+.video-side {
+  display: grid;
+  gap: 14px;
+}
+
+.chapters {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--seam);
+}
+
+.chapters li {
+  border-bottom: 1px solid var(--seam);
+}
+
+.chapters a {
+  display: grid;
+  grid-template-columns: 3.4em minmax(0, 1fr);
+  gap: 10px;
+  padding: 9px 2px;
+  color: var(--chalk);
+  text-decoration: none;
+  font-size: 0.98rem;
+}
+
+.chapters a:hover {
+  color: var(--indigo-light);
+}
+
+.chapters .t {
+  color: var(--dust);
+  font-family: var(--mono);
+  font-size: 0.86em;
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.12em;
+}
+
+.video-note {
+  font-size: var(--step--1);
+  color: var(--dust);
 }
 
 /* ---------------------------------------------------------------- unlock */
@@ -1340,6 +1458,20 @@ kbd {
     order: 0;
   }
 
+  .video-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Two columns that read down, so the chapters stay in time order. */
+  .chapters {
+    columns: 2;
+    column-gap: 28px;
+  }
+
+  .chapters li {
+    break-inside: avoid;
+  }
+
   .carving {
     justify-self: start;
     text-align: left;
@@ -1358,7 +1490,8 @@ kbd {
   }
 }
 
-@media (max-width: 720px) {
+/* Below this width the section links no longer fit beside the brand and the button. */
+@media (max-width: 800px) {
   .nav-links {
     display: none;
   }
@@ -1366,7 +1499,9 @@ kbd {
   .nav .button {
     margin-left: auto;
   }
+}
 
+@media (max-width: 720px) {
   .facts ul {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1399,6 +1534,15 @@ kbd {
     flex: 1 1 auto;
     justify-content: center;
   }
+
+  .chapters {
+    columns: 1;
+  }
+
+  /* On a phone the button keeps only the play icon and the length. */
+  .video-cta-label {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1421,7 +1565,13 @@ kbd {
     display: none;
   }
 
-  .button {
+  .button,
+  .video-card,
+  .video-cta {
     transition: none;
+  }
+
+  .video-card:hover {
+    transform: none;
   }
 }

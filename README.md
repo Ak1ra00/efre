@@ -12,6 +12,7 @@ for Windows: a closed place on your own PC that opens only with your YubiKey.
 [About the name ↓](#the-name-ⵉⴼⵔⵉ)
 
 **[Website](https://ak1ra00.github.io/efre/)** ·
+**[Video](https://www.youtube.com/watch?v=9Ybdictb4dw)** ·
 **[Download](https://github.com/Ak1ra00/efre/releases/latest)** ·
 **[Security](SECURITY.md)**
 
@@ -35,6 +36,13 @@ for Windows: a closed place on your own PC that opens only with your YubiKey.
 
 Read **[SECURITY.md](SECURITY.md)** for what efre protects against and its honest
 limits.
+
+## Video tour
+
+A 3½-minute tour: what efre is, how it works, and how to install it, set it up with two
+YubiKeys, unlock it and use it every day.
+
+<a href="https://www.youtube.com/watch?v=9Ybdictb4dw"><img src="docs/images/video.png" width="720" alt="Watch the efre video tour on YouTube (3:34)"></a>
 
 ## What you need
 
@@ -76,6 +84,8 @@ Development builds of every commit are in the
 Prefer to build it yourself? See [Build from source](#build-from-source).
 
 ## How to use efre
+
+Prefer to watch? The [video tour](#video-tour) shows setup, unlocking and everyday use.
 
 ### 1. Set a PIN on each YubiKey
 Skip this step if your keys already have a FIDO2 PIN.
