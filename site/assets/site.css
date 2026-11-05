@@ -310,6 +310,12 @@ code {
   border-color: var(--dust);
 }
 
+.button-note {
+  color: var(--dust);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
 .button-small {
   padding: 8px 14px;
   font-size: var(--step--1);
